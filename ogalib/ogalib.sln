@@ -1,0 +1,51 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.9.34607.119
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ogalib-windows", "ogalib-windows.vcxproj", "{F92085C5-7635-4753-9C9F-85E390E9788B}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ogalib-ps5", "ogalib-ps5.vcxproj", "{C74F06D8-238E-46D1-A54F-9F09D7268F43}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Prospero = Debug|Prospero
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|Prospero = Release|Prospero
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F92085C5-7635-4753-9C9F-85E390E9788B}.Debug|Prospero.ActiveCfg = Debug|x64
+		{F92085C5-7635-4753-9C9F-85E390E9788B}.Debug|Prospero.Build.0 = Debug|x64
+		{F92085C5-7635-4753-9C9F-85E390E9788B}.Debug|x64.ActiveCfg = Debug|x64
+		{F92085C5-7635-4753-9C9F-85E390E9788B}.Debug|x64.Build.0 = Debug|x64
+		{F92085C5-7635-4753-9C9F-85E390E9788B}.Debug|x86.ActiveCfg = Debug|Win32
+		{F92085C5-7635-4753-9C9F-85E390E9788B}.Debug|x86.Build.0 = Debug|Win32
+		{F92085C5-7635-4753-9C9F-85E390E9788B}.Release|Prospero.ActiveCfg = Release|x64
+		{F92085C5-7635-4753-9C9F-85E390E9788B}.Release|Prospero.Build.0 = Release|x64
+		{F92085C5-7635-4753-9C9F-85E390E9788B}.Release|x64.ActiveCfg = Release|x64
+		{F92085C5-7635-4753-9C9F-85E390E9788B}.Release|x64.Build.0 = Release|x64
+		{F92085C5-7635-4753-9C9F-85E390E9788B}.Release|x86.ActiveCfg = Release|Win32
+		{F92085C5-7635-4753-9C9F-85E390E9788B}.Release|x86.Build.0 = Release|Win32
+		{C74F06D8-238E-46D1-A54F-9F09D7268F43}.Debug|Prospero.ActiveCfg = Debug|Prospero
+		{C74F06D8-238E-46D1-A54F-9F09D7268F43}.Debug|Prospero.Build.0 = Debug|Prospero
+		{C74F06D8-238E-46D1-A54F-9F09D7268F43}.Debug|x64.ActiveCfg = Debug|Prospero
+		{C74F06D8-238E-46D1-A54F-9F09D7268F43}.Debug|x64.Build.0 = Debug|Prospero
+		{C74F06D8-238E-46D1-A54F-9F09D7268F43}.Debug|x86.ActiveCfg = Debug|Prospero
+		{C74F06D8-238E-46D1-A54F-9F09D7268F43}.Debug|x86.Build.0 = Debug|Prospero
+		{C74F06D8-238E-46D1-A54F-9F09D7268F43}.Release|Prospero.ActiveCfg = Release|Prospero
+		{C74F06D8-238E-46D1-A54F-9F09D7268F43}.Release|Prospero.Build.0 = Release|Prospero
+		{C74F06D8-238E-46D1-A54F-9F09D7268F43}.Release|x64.ActiveCfg = Release|Prospero
+		{C74F06D8-238E-46D1-A54F-9F09D7268F43}.Release|x64.Build.0 = Release|Prospero
+		{C74F06D8-238E-46D1-A54F-9F09D7268F43}.Release|x86.ActiveCfg = Release|Prospero
+		{C74F06D8-238E-46D1-A54F-9F09D7268F43}.Release|x86.Build.0 = Release|Prospero
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {CA01511F-08DB-42BC-863E-DADD93F6D0A2}
+	EndGlobalSection
+EndGlobal

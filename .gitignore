@@ -1,0 +1,7 @@
+*~
+*.pyc
+.vs
+.DS_Store
+*.pkg.naps_metric.json
+*.vcxproj.user
+x64

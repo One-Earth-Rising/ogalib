@@ -1,0 +1,2 @@
+D:\Projects\OGAHubExample\ogalib\Prospero_Debug\ogalib-ps5.a
+D:\Projects\ogalib\ogalib\Prospero_Debug\ogalib-ps5.a
