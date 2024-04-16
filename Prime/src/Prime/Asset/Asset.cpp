@@ -148,22 +148,28 @@ void Asset::Load(size_t id) {
               std::string loadFormat;
               json loadInfo;
 
-              // Search for model file formats.
-              for(const auto& item: dataManifest) {
-                if(auto itFormat = item.find("format")) {
-                  std::string format = itFormat.GetString();
+              if(auto itInfoFormat = info.find("format")) {
+                std::string infoFormat = itInfoFormat.GetString();
 
-                  if(format == "gltf" || format == "glb") { // prefer GLTF over FBX
-                    if(auto itURL = item.find("url")) {
-                      loadURL = itURL.GetString();
-                      loadFormat = format;
-                    }
-                  }
-                  else if(format == "fbx") {
-                    if(loadFormat.empty()) {
-                      if(auto itURL = item.find("url")) {
-                        loadURL = itURL.GetString();
-                        loadFormat = format;
+                // Search for model file formats.
+                if(infoFormat == "gltf" || infoFormat == "glb" || infoFormat == "fbx") {
+                  for(const auto& item: dataManifest) {
+                    if(auto itFormat = item.find("format")) {
+                      std::string format = itFormat.GetString();
+
+                      if(format == "gltf" || format == "glb") { // prefer GLTF over FBX
+                        if(auto itURL = item.find("url")) {
+                          loadURL = itURL.GetString();
+                          loadFormat = format;
+                        }
+                      }
+                      else if(format == "fbx") {
+                        if(loadFormat.empty()) {
+                          if(auto itURL = item.find("url")) {
+                            loadURL = itURL.GetString();
+                            loadFormat = format;
+                          }
+                        }
                       }
                     }
                   }
@@ -566,7 +572,13 @@ void Asset::Draw() {
     g.program.Pop();
   }
   else if(rig) {
+    g.program.Push() = GetSkeletonProgram();
+    g.depthMask.Push() = false;
+
     rig->Draw();
+
+    g.depthMask.Pop();
+    g.program.Pop();
   }
 }
 

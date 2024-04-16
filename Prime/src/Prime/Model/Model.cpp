@@ -808,6 +808,16 @@ void Model::DrawMesh(const ModelContentMesh& mesh, size_t meshIndex) {
   if(!directTex) {
     const ModelContentScene* activeScene = GetActiveScene();
     if(activeScene) {
+      size_t textureIndex = mesh.GetTextureIndex();
+      if(textureIndex != PrimeNotFound) {
+        directTex = activeScene->GetTexture(textureIndex);
+      }
+    }
+  }
+
+  if(!directTex) {
+    const ModelContentScene* activeScene = GetActiveScene();
+    if(activeScene) {
       size_t textureCount = activeScene->GetTextureCount();
       if(textureCount > 0) {
         for(size_t i = 0; i < textureCount; i++) {
