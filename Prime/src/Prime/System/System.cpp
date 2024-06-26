@@ -334,9 +334,17 @@ bool Prime::UnlockSetjmpMutex() {
 void Prime::InitContent() {
   contentDataMutex = new ThreadMutex("Content Data");
   setjmpMutex = new ThreadMutex("setjmp", true);
+
+  GetContent("data/Tex/Default.png", [=](Content* content) {
+    if(content->IsInstance<ImagemapContent>()) {
+      ModelContent::defaultTex = content->GetAs<ImagemapContent>()->GetTex();
+    }
+  });
 }
 
 void Prime::ShutdownContent() {
+  ModelContent::defaultTex = nullptr;
+
   PrimeSafeDelete(setjmpMutex);
   PrimeSafeDelete(contentDataMutex);
 }

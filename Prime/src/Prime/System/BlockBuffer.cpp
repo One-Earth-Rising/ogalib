@@ -47,38 +47,19 @@ static __inline void BlockBufferDprintf(const char* f, ...) {}
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////
-// Fnctions
-////////////////////////////////////////////////////////////////////////////////
-
-static __inline size_t GetBlockBufferNextPowerOf2(size_t v) {
-  v--;
-  v |= v >> 1;
-  v |= v >> 2;
-  v |= v >> 4;
-  v |= v >> 8;
-  v |= v >> 16;
-  v |= v >> 32;
-  v++;
-  return v;
-}
-
-////////////////////////////////////////////////////////////////////////////////
 // Classes
 ////////////////////////////////////////////////////////////////////////////////
 
 BlockBuffer::BlockBuffer(size_t blockSize, size_t initSize, size_t blockAlignment):
 blocks(nullptr),
 blockCount(0),
-blockAlignment(0),
+blockAlignment(blockAlignment),
 totalSize(0) {
 
   if(blockSize == 0)
     this->blockSize = BLOCK_BUFFER_DEFAULT_BLOCK_SIZE;
   else
     this->blockSize = blockSize;
-
-  if(blockAlignment > 0)
-    this->blockAlignment = GetBlockBufferNextPowerOf2(blockAlignment);
 
   if(initSize > 0 && this->blockSize > initSize)
     this->blockSize = initSize;
@@ -504,10 +485,6 @@ void* BlockBuffer::GetAddr(size_t offset) const {
 
 bool BlockBuffer::CanDirectCopy(const BlockBuffer& other) const {
   return blockCount == other.blockCount && blockSize == other.blockSize && blockAlignment == other.blockAlignment && totalSize == other.totalSize;
-}
-
-size_t BlockBuffer::CopyTo(void* p, size_t offset, size_t size) const {
-  return Read(p, offset, size);
 }
 
 void* BlockBuffer::ConvertToBytes(size_t* size, uint32_t alignment) const {

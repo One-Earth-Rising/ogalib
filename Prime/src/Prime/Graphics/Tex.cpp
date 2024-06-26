@@ -1112,7 +1112,7 @@ void Tex::SetPixelsFromBlockBuffer(const std::string& name, const BlockBuffer* p
           size_t destOffset = 0;
           for(size_t y = 0; y < texData->th; y++) {
             void* p = texData->pixels->GetAddr(destOffset);
-            pixels->CopyTo(p, destOffset, stride);
+            pixels->Read(p, destOffset, stride);
             destOffset += stride;
           }
         }

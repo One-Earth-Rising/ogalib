@@ -191,6 +191,9 @@ void Model::SetContent(ModelContent* content) {
       vertexMax = activeScene->GetVertexMax();
     }
   }
+  else {
+    SetNoAction();
+  }
 }
 
 void Model::Calc(f32 dt) {
@@ -419,6 +422,57 @@ f32 Model::GetActionLoopedTime() const {
 
 f32 Model::GetActionT() const {
   return actionLen ? actionCtr / actionLen : 0.0f;
+}
+
+void Model::SetNoAction() {
+  if(!HasContent())
+    return;
+
+  DiscardAction();
+
+  if(content->GetSceneCount() == 0)
+    return;
+
+  const ModelContentScene& scene = content->GetScene(0);
+
+  if(scene.GetSkeletonCount() == 0)
+    return;
+
+  const ModelContentSkeleton& skeleton = scene.GetSkeleton(0);
+
+  size_t meshCount = scene.GetMeshCount();
+  size_t boneCount = skeleton.GetBoneCount();
+  size_t actionPoseBoneCount = skeleton.GetActionPoseBoneCount();
+
+  if(meshCount) {
+    activeMeshCount = meshCount;
+
+    if(actionPoseBoneCount) {
+      activeBoneCount = actionPoseBoneCount;
+      activeBoneTransforms = new Mat44*[activeMeshCount];
+      if(activeBoneTransforms) {
+        for(size_t i = 0; i < activeMeshCount; i++) {
+          activeBoneTransforms[i] = new Mat44[activeBoneCount];
+        }
+      }
+    }
+
+    if(boneCount) {
+      totalBoneCount = boneCount;
+      boneTransforms = new Mat44*[activeMeshCount];
+      if(boneTransforms) {
+        for(size_t i = 0; i < activeMeshCount; i++) {
+          boneTransforms[i] = new Mat44[totalBoneCount];
+        }
+      }
+    }
+  }
+
+  currActionPose1.SetContent(content, PrimeNotFound);
+  currActionPose2.SetContent(content, PrimeNotFound);
+  currActionPoseI.SetContent(content, PrimeNotFound);
+  lastActionPose.SetContent(content, PrimeNotFound);
+  lastActionPoseTemp.SetContent(content, PrimeNotFound);
 }
 
 void Model::SetActionByIndex(size_t index) {
@@ -831,6 +885,9 @@ void Model::DrawMesh(const ModelContentMesh& mesh, size_t meshIndex) {
       }
     }
   }
+
+  if(!directTex)
+    directTex = ModelContent::defaultTex;
 
   if(!directTex)
     return;

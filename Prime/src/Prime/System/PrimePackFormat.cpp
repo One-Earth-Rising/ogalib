@@ -222,7 +222,7 @@ BlockBuffer* PrimePackFormat::GetItemData(const std::string& path, size_t blockS
           size_t bytesRead = 0;
           size_t bytesUncompressed = 0;
           while(bytesUncompressed < item.size) {
-            size_t readSize = blockBuffer->CopyTo(bufferIn, bytesRead, ppfBlockBufferReadSize);
+            size_t readSize = blockBuffer->Read(bufferIn, bytesRead, ppfBlockBufferReadSize);
             if(readSize > 0) {
               bool inflateFailure = false;
               stream.avail_in = (uInt) readSize;

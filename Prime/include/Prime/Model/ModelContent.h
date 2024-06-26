@@ -104,6 +104,10 @@ private:
 
 public:
 
+  static refptr<Tex> defaultTex;
+
+public:
+
   const ModelContentScene& GetScene(size_t index) const {PrimeAssert(index < sceneCount, "Invalid scene index."); return scenes[index];}
   const ModelContentScene* GetScenes() const {return scenes;}
   size_t GetSceneCount() const {return sceneCount;}

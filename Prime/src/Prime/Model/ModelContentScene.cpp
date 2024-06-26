@@ -961,7 +961,19 @@ void ModelContentScene::ReadModelUsingAssimp(const void* data, size_t dataSize) 
     return;
   }
 
-  if(scene->mNumAnimations) {
+  bool createSkeleton = scene->mNumAnimations > 0;
+
+  if(createSkeleton) {
+    for(size_t i = 0; i < scene->mNumMeshes; i++) {
+      const struct aiMesh* sceneMesh = scene->mMeshes[i];
+      if(!sceneMesh->HasBones()) {
+        createSkeleton = false;
+        break;
+      }
+    }
+  }
+
+  if(createSkeleton) {
     skeletonCount = 1;
     skeletons = new ModelContentSkeleton[skeletonCount];
     ModelContentSkeleton& skeleton = skeletons[0];
@@ -1000,7 +1012,7 @@ void ModelContentScene::ReadModelUsingAssimp(const void* data, size_t dataSize) 
 
       size_t vertexCount = sceneMesh->mNumVertices;
 
-      if(sceneMesh->HasBones()) {
+      if(skeletonCount > 0) {
         ModelMeshAnimVertex* vertices = (ModelMeshAnimVertex*) calloc(vertexCount, sizeof(ModelMeshAnimVertex));
         ModelMeshAnimVertex* vertex = vertices;
 
@@ -1184,7 +1196,8 @@ void ModelContentScene::ReadModelUsingAssimp(const void* data, size_t dataSize) 
                 vertex.boneCount += 1.0f;
               }
               else {
-                PrimeAssert(false, "Vertex %d is affected by too many bones, max is %d, found %zu", sceneVertexWeight.mVertexId, MODEL_MESH_VERTEX_MAX_BONE_WEIGHT_COUNT, (size_t) vertex.boneCount);
+                //PrimeAssert(false, "Vertex %d is affected by too many bones, max is %d, found %zu", sceneVertexWeight.mVertexId, MODEL_MESH_VERTEX_MAX_BONE_WEIGHT_COUNT, (size_t) vertex.boneCount);
+                dbgprintf("[Warning] Vertex %d is affected by too many bones, max is %d, found %zu", sceneVertexWeight.mVertexId, MODEL_MESH_VERTEX_MAX_BONE_WEIGHT_COUNT, (size_t) vertex.boneCount);
               }
             }
             else {

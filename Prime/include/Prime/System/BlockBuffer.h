@@ -87,7 +87,6 @@ public:
   void* GetAddr(size_t offset) const;
 
   bool CanDirectCopy(const BlockBuffer& other) const;
-  size_t CopyTo(void* p, size_t offset, size_t size) const;
   void* ConvertToBytes(size_t* size = NULL, uint32_t alignment = 0) const;
   void* ConsumeToBytes(size_t* size = NULL);
   std::string ToString() const;

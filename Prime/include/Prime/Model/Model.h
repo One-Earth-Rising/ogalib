@@ -133,6 +133,7 @@ public:
   f32 GetActionLoopedTime() const;
   f32 GetActionT() const;
 
+  virtual void SetNoAction();
   virtual void SetActionByIndex(size_t index);
   virtual void ResetActionChanged();
   virtual bool HasActionChanged();

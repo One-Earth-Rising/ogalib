@@ -244,6 +244,10 @@ int main(int argc, const char* const* argv) {
   // Init engine.
   Engine& engine = PxEngine;
 
+#ifdef _DEBUG
+  Prime::SetGlobalSendURLParams({{"ignoreSSLErrors", true}});
+#endif
+
   // Load font.
   refptr font = new Font();
 
