@@ -909,6 +909,16 @@ void Model::DrawMesh(const ModelContentMesh& mesh, size_t meshIndex) {
   if(auto it = meshTransforms.Find(mesh.name))
     g.model.Multiply(it.value());
 
+  Mat44 lightRot = g.view;
+  lightRot.e14 = 0.0f;
+  lightRot.e24 = 0.0f;
+  lightRot.e34 = 0.0f;
+  lightRot.e44 = 1.0f;
+  lightRot.Transpose();
+  Vec3 lightDir = lightRot.Multiply(Vec3(0.0f, 0.0f, -1.0f));
+
+  program->SetVariable("lightDir", lightDir);
+
   g.Draw(mesh.ab, mesh.ib, directTex);
 
   g.model.Pop();

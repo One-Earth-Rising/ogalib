@@ -20,6 +20,7 @@ out vec3 normal;
 
 uniform ShaderUniformBlock {
   mat4 mvp;
+  vec3 lightDir;
   mat4 boneTransform[MAX_BONE_COUNT];
 };
 
@@ -30,6 +31,7 @@ void main() {
 
   if(boneCount < 1.0) {
     point = p;
+    normal = vNormal;
   }
   else {
     int boneIndex1 = int(floor(vBoneIndex1[0] + 0.5));
@@ -127,9 +129,16 @@ void main() {
     }
 
     point = transform * p;
+
+    mat4 rotation = mat4(
+      vec4(transform[0][0], transform[0][1], transform[0][2], 0.0),
+      vec4(transform[1][0], transform[1][1], transform[1][2], 0.0),
+      vec4(transform[2][0], transform[2][1], transform[2][2], 0.0),
+      vec4(0.0, 0.0, 0.0, 1.0));
+
+    normal = (rotation * vec4(vNormal, 1.0)).xyz;
   }
 
   gl_Position = mvp * point;
   tc = vUVBoneCount.xy;
-  normal = vNormal;
 }

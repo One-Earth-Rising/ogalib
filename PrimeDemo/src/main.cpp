@@ -92,6 +92,8 @@ int main(int argc, const char* const* argv) {
   g.ShowScreen();
   g.clearScreenColor = Color(0.0f, 0.0f, 0.1f);
 
+  f32 modelRotateCtr = 0.0f;
+
   engine.Start();
   while(engine.IsRunning()) {
     f32 dt = engine.StartFrame();
@@ -154,6 +156,8 @@ int main(int argc, const char* const* argv) {
     if(rhino) {
       rhino->Calc(dt);
 
+      modelRotateCtr += dt;
+
       const Vec3& vertexMin = rhino->GetVertexMin();
       const Vec3& vertexMax = rhino->GetVertexMax();
 
@@ -167,7 +171,7 @@ int main(int argc, const char* const* argv) {
       g.projection.Push().LoadPerspective(60.0f, viewportW / screenH, size * 0.1f, size * 20.0f);
       g.view.Push().LoadTranslation(0.0f, -size * 0.5f, -size * 2.0f)
         .Rotate(25.0f, 1.0f, 0.0f, 0.0f)
-        .Rotate(35.0f, 0.0f, 1.0f, 0.0f);
+        .Rotate(modelRotateCtr * 30.0f, 0.0f, 1.0f, 0.0f);
 
       rhino->Draw();
 

@@ -9,6 +9,7 @@ out vec3 normal;
 
 uniform ShaderUniformBlock {
   mat4 mvp;
+  vec3 lightDir;
 };
 
 void main() {
