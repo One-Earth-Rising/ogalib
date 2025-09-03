@@ -73,12 +73,9 @@
     <ClCompile Include="src\ogalib\json.cpp" />
     <ClCompile Include="src\ogalib\md5\md5.cpp" />
     <ClCompile Include="src\ogalib\ogalib.cpp" />
-    <ClCompile Include="src\ogalib\ps5\ps5_ogalib.cpp" />
-    <ClCompile Include="src\ogalib\ps5\ps5_Thread.cpp" />
-    <ClCompile Include="src\ogalib\steam\steam_ogalib.cpp" />
+    <ClCompile Include="src\ogalib\ps5\ogalib_ps5.cpp" />
+    <ClCompile Include="src\ogalib\ps5\Thread_ps5.cpp" />
     <ClCompile Include="src\ogalib\Thread.cpp" />
-    <ClCompile Include="src\ogalib\windows\windows_ogalib.cpp" />
-    <ClCompile Include="src\ogalib\windows\windows_Thread.cpp" />
     <ClCompile Include="stdafx\stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Prospero'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Prospero'">Create</PrecompiledHeader>
@@ -90,49 +87,9 @@
     <ClInclude Include="include\ogalib\json.h" />
     <ClInclude Include="include\ogalib\md5\md5.h" />
     <ClInclude Include="include\ogalib\ogalib.h" />
-    <ClInclude Include="include\ogalib\ps5\ps5_ogalib.h" />
-    <ClInclude Include="include\ogalib\steam\steam_ogalib.h" />
+    <ClInclude Include="include\ogalib\ps5\ogalib_ps5.h" />
     <ClInclude Include="include\ogalib\Thread.h" />
     <ClInclude Include="include\ogalib\Types.h" />
-    <ClInclude Include="include\rapidjson\allocators.h" />
-    <ClInclude Include="include\rapidjson\builder.h" />
-    <ClInclude Include="include\rapidjson\cursorstreamwrapper.h" />
-    <ClInclude Include="include\rapidjson\document.h" />
-    <ClInclude Include="include\rapidjson\encodedstream.h" />
-    <ClInclude Include="include\rapidjson\encodings.h" />
-    <ClInclude Include="include\rapidjson\error\en.h" />
-    <ClInclude Include="include\rapidjson\error\error.h" />
-    <ClInclude Include="include\rapidjson\filereadstream.h" />
-    <ClInclude Include="include\rapidjson\filewritestream.h" />
-    <ClInclude Include="include\rapidjson\fwd.h" />
-    <ClInclude Include="include\rapidjson\internal\biginteger.h" />
-    <ClInclude Include="include\rapidjson\internal\clzll.h" />
-    <ClInclude Include="include\rapidjson\internal\diyfp.h" />
-    <ClInclude Include="include\rapidjson\internal\dtoa.h" />
-    <ClInclude Include="include\rapidjson\internal\ieee754.h" />
-    <ClInclude Include="include\rapidjson\internal\itoa.h" />
-    <ClInclude Include="include\rapidjson\internal\meta.h" />
-    <ClInclude Include="include\rapidjson\internal\pow10.h" />
-    <ClInclude Include="include\rapidjson\internal\regex.h" />
-    <ClInclude Include="include\rapidjson\internal\stack.h" />
-    <ClInclude Include="include\rapidjson\internal\strfunc.h" />
-    <ClInclude Include="include\rapidjson\internal\strtod.h" />
-    <ClInclude Include="include\rapidjson\internal\swap.h" />
-    <ClInclude Include="include\rapidjson\istreamwrapper.h" />
-    <ClInclude Include="include\rapidjson\memorybuffer.h" />
-    <ClInclude Include="include\rapidjson\memorystream.h" />
-    <ClInclude Include="include\rapidjson\msinttypes\inttypes.h" />
-    <ClInclude Include="include\rapidjson\msinttypes\stdint.h" />
-    <ClInclude Include="include\rapidjson\ostreamwrapper.h" />
-    <ClInclude Include="include\rapidjson\pointer.h" />
-    <ClInclude Include="include\rapidjson\prettywriter.h" />
-    <ClInclude Include="include\rapidjson\rapidjson.h" />
-    <ClInclude Include="include\rapidjson\reader.h" />
-    <ClInclude Include="include\rapidjson\schema.h" />
-    <ClInclude Include="include\rapidjson\stream.h" />
-    <ClInclude Include="include\rapidjson\stringbuffer.h" />
-    <ClInclude Include="include\rapidjson\uri.h" />
-    <ClInclude Include="include\rapidjson\writer.h" />
     <ClInclude Include="stdafx\stdafx.h" />
   </ItemGroup>
   <Import Condition="'$(ConfigurationType)' == 'Makefile' and Exists('$(VCTargetsPath)\Platforms\$(Platform)\SCE.Makefile.$(Platform).targets')" Project="$(VCTargetsPath)\Platforms\$(Platform)\SCE.Makefile.$(Platform).targets" />

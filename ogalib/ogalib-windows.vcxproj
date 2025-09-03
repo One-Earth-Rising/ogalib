@@ -24,8 +24,7 @@
     <ClInclude Include="include\ogalib\json.h" />
     <ClInclude Include="include\ogalib\md5\md5.h" />
     <ClInclude Include="include\ogalib\ogalib.h" />
-    <ClInclude Include="include\ogalib\ps5\ps5_ogalib.h" />
-    <ClInclude Include="include\ogalib\steam\steam_ogalib.h" />
+    <ClInclude Include="include\ogalib\steam\ogalib_steam.h" />
     <ClInclude Include="include\ogalib\Thread.h" />
     <ClInclude Include="include\ogalib\Types.h" />
     <ClInclude Include="stdafx\stdafx.h" />
@@ -35,12 +34,10 @@
     <ClCompile Include="src\ogalib\json.cpp" />
     <ClCompile Include="src\ogalib\md5\md5.cpp" />
     <ClCompile Include="src\ogalib\ogalib.cpp" />
-    <ClCompile Include="src\ogalib\ps5\ps5_ogalib.cpp" />
-    <ClCompile Include="src\ogalib\ps5\ps5_Thread.cpp" />
-    <ClCompile Include="src\ogalib\steam\steam_ogalib.cpp" />
+    <ClCompile Include="src\ogalib\steam\ogalib_steam.cpp" />
     <ClCompile Include="src\ogalib\Thread.cpp" />
-    <ClCompile Include="src\ogalib\windows\windows_ogalib.cpp" />
-    <ClCompile Include="src\ogalib\windows\windows_Thread.cpp" />
+    <ClCompile Include="src\ogalib\windows\ogalib_windows.cpp" />
+    <ClCompile Include="src\ogalib\windows\Thread_windows.cpp" />
     <ClCompile Include="stdafx\stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>

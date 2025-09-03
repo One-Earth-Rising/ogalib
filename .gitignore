@@ -4,4 +4,7 @@
 .DS_Store
 *.pkg.naps_metric.json
 *.vcxproj.user
-x64
+x64/
+Prospero_Debug/
+Prospero_Release/
+

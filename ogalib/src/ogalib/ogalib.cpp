@@ -31,9 +31,11 @@ SOFTWARE.
 ////////////////////////////////////////////////////////////////////////////////
 
 #if defined(OGALIB_USING_STEAM)
-#include <ogalib/steam/steam_ogalib.h>
+#include <ogalib/steam/ogalib_steam.h>
 #elif defined(__PROSPERO__)
-#include <ogalib/ps5/ps5_ogalib.h>
+#include <ogalib/ps5/ogalib_ps5.h>
+#elif defined(__ORBIS__)
+#include <ogalib/ps4/ogalib_ps4.h>
 #endif
 #include <ogalib/md5/md5.h>
 #include <cctype>
@@ -69,6 +71,14 @@ ogalib::Data ogalibData;
 // Functions
 ////////////////////////////////////////////////////////////////////////////////
 
+static __inline char FromHex(char c) {
+  return isdigit(c) ? c - '0' : tolower(c) - 'a' + 10;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Functions
+////////////////////////////////////////////////////////////////////////////////
+
 Data::Data():
 initialized(false),
 encodeURLRequests(false),
@@ -84,12 +94,10 @@ void ogalib::Init(const json& params) {
     return;
   }
 
-  ogalibData.initialized = true;
-
   ogalibData.initParams = params;
 
   ogalibData.baseAPI = OGALIB_API_ROOT;
-  ogalibData.globalSendURLParams = json::object();
+  ogalibData.globalSendURLParams.null();
 
   Thread::InitGlobal();
   Job::InitGlobal();
@@ -100,7 +108,11 @@ void ogalib::Init(const json& params) {
   InitSteam();
 #elif defined(__PROSPERO__)
   InitPS5();
+#elif defined(__ORBIS__)
+  InitPS4();
 #endif
+
+  ogalibData.initialized = true;
 }
 
 void ogalib::Shutdown() {
@@ -115,9 +127,11 @@ void ogalib::Shutdown() {
   }
 
 #if defined(OGALIB_USING_STEAM)
-  FinalizeSteam();
+  ShutdownSteam();
 #elif defined(__PROSPERO__)
-  FinalizePS5();
+  ShutdownPS5();
+#elif defined(__ORBIS__)
+  ShutdownPS4();
 #endif
 
   if(ogalibData.assetCacheMutex) {
@@ -159,14 +173,9 @@ void ogalib::SetAPIKey(const std::string& apiKey) {
   ogalibData.apiKey = apiKey;
 }
 
-void ogalib::WaitForNoJobs() {
-  while(Job::HasJobs()) {
-    ogalib::Process();
-    Thread::Yield();
-  }
-}
-
 void ogalib::SetGlobalSendURLParams(const json& params) {
+  ogalibRequireInit;
+
   ogalibData.globalSendURLParams = params;
 }
 
@@ -204,69 +213,6 @@ void ogalib::SendURL(const std::string& url, const json& params, const std::func
       callback(job.data);
     }
   });
-}
-
-void ogalib::Login(std::function<void(const json&)> callback) {
-  ogalibRequireInit;
-
-  if(ogalibData.loginInProgress) {
-    if(callback) {
-      callback({
-        {"error", "ogalib login is already in progress."},
-        });
-    }
-  }
-  else {
-    ogalibData.loginInProgress = true;
-
-    new Job(nullptr, [=](Job& cb) {
-      ogalibAssert(ogalibData.initialized, "ogalib is not initialized.");
-      if(!ogalibData.initialized) {
-        if(callback) {
-          callback({
-            {"error", "ogalib is not initialized."},
-            });
-        }
-      }
-
-      ogalibData.userId = 0;
-      ogalibData.token = 0;
-
-#if defined(OGALIB_USING_STEAM)
-      LoginUsingSteam(callback);
-#elif defined(__PROSPERO__)
-      LoginUsingPS5(callback);
-#endif
-    });
-  }
-}
-
-bool ogalib::IsLoginInProgress() {
-  ogalibRequireInit;
-
-  return ogalibData.loginInProgress;
-}
-
-void ogalib::WaitForLogin(std::function<void()> callback) {
-  ogalibRequireInit;
-
-  if(IsLoginInProgress()) {
-    new Job([=](Job& cb) {
-      while(IsLoginInProgress()) {
-        Thread::Sleep(0.1);
-        Thread::Yield();
-      }
-    }, [=](Job& cb) {
-      if(callback) {
-        callback();
-      }
-    });
-  }
-  else {
-    if(callback) {
-      callback();
-    }
-  }
 }
 
 void ogalib::GetAssetByURL(const std::string& url, std::function<void(const json&)> callback) {
@@ -331,10 +277,7 @@ void ogalib::GetAssetByURL(const std::string& url, std::function<void(const json
     ogalibData.assetCacheMutex->Lock();
     ogalibData.assetCacheInProgress[useURL] = true;
 
-    json sendURLParams;
-    sendURLParams["ignoreSSLErrors"] = true;
-
-    SendURL(url, sendURLParams, [=](const json& data) {
+    SendURL(url, [=](const json& data) {
       ogalibData.assetCacheMutex->Lock();
       ogalibData.assetCacheInProgress.erase(useURL);
       ogalibData.assetCacheMutex->Unlock();
@@ -360,7 +303,7 @@ void ogalib::GetAssetByURL(const std::string& url, std::function<void(const json
       if(auto it = data.find("error")) {
         if(callback) {
           callback({
-            {"error", it.c_str()},
+            {"error", it.cstr()},
             });
         }
       }
@@ -431,50 +374,227 @@ void ogalib::GetAssetByURL(const std::string& url, std::function<void(const json
   ogalibData.assetCacheMutex->Unlock();
 }
 
+void ogalib::Login(std::function<void(const json&)> callback) {
+  ogalibRequireInit;
+
+  if(ogalibData.loginInProgress) {
+    if(callback) {
+      callback({
+        {"error", "ogalib login is already in progress."},
+        });
+    }
+  }
+  else {
+    ogalibData.loginInProgress = true;
+
+    new Job(nullptr, [=](Job& cb) {
+      ogalibAssert(ogalibData.initialized, "ogalib is not initialized.");
+      if(!ogalibData.initialized) {
+        if(callback) {
+          callback({
+            {"error", "ogalib is not initialized."},
+            });
+        }
+      }
+
+      ogalibData.userId = 0;
+      ogalibData.token = 0;
+
+#if defined(OGALIB_USING_STEAM)
+      LoginUsingSteam(callback);
+#elif defined(__PROSPERO__)
+      LoginUsingPS5(callback);
+#elif defined(__ORBIS__)
+      LoginUsingPS4(callback);
+#endif
+    });
+  }
+}
+
+bool ogalib::IsLoginInProgress() {
+  ogalibRequireInit;
+
+  return ogalibData.loginInProgress;
+}
+
+void ogalib::WaitForLogin(std::function<void()> callback) {
+  ogalibRequireInit;
+
+  if(IsLoginInProgress()) {
+    new Job([=](Job& cb) {
+      while(IsLoginInProgress()) {
+        Thread::Sleep(0.5);
+        Thread::Yield();
+      }
+    }, [=](Job& cb) {
+      if(callback) {
+        callback();
+      }
+    }, JobType::Independent);
+  }
+  else {
+    if(callback) {
+      callback();
+    }
+  }
+}
+
+size_t ogalib::GetUserId() {
+  if(ogalibData.token) {
+    return ogalibData.userId;
+  }
+  else {
+    return 0;
+  }
+}
+
+void ogalib::GetPlayerOGACollection(std::function<void(const json&)> callback) {
+  GetPlayerOGACollection({}, callback);
+}
+
+void ogalib::GetPlayerOGACollection(const json& params, std::function<void(const json&)> callback) {
+  ogalibAssert(ogalibData.initialized, "ogalib is not initialized.");
+
+  WaitForLogin([=]() {
+    size_t usePlayerAccountId = ogalibData.userId;
+
+    if(auto it = params.find("playerAccountId")) {
+      if(it.IsNumber()) {
+        usePlayerAccountId = it.GetUint64();
+      }
+    }
+
+    if(usePlayerAccountId) {
+      std::string urlParams = string_printf("?playerAccountId=%zu", usePlayerAccountId);
+
+      if(auto it = params.find("getOGAData")) {
+        if(it.IsBool()) {
+          urlParams += "&";
+          urlParams += it.key().GetString();
+          urlParams += "=";
+          urlParams += it.GetBool() ? "1" : "0";
+        }
+      }
+
+      if(auto it = params.find("getAssetDataManifest")) {
+        if(it.IsBool()) {
+          urlParams += "&";
+          urlParams += it.key().GetString();
+          urlParams += "=";
+          urlParams += it.GetBool() ? "1" : "0";
+        }
+      }
+
+      if(auto it = params.find("assetDataManifestFilterUserId")) {
+        if(it.IsNumber()) {
+          urlParams += "&";
+          urlParams += it.key().GetString();
+          urlParams += "=";
+          urlParams += std::to_string(it.GetUint64());
+        }
+      }
+  
+      if(ogalibData.encodeURLRequests)
+        urlParams = EncodeURL(urlParams.c_str());
+
+      std::string url = string_printf("%s/GetPlayerOGACollection/v1/%s", ogalibData.baseAPI.c_str(), urlParams.c_str());
+
+      SendURL(url.c_str(), [=](const json& urlResponse) {
+        if(auto it = urlResponse.find("error")) {
+          if(callback) {
+            callback({
+              {"error", it.cstr()},
+              });
+          }
+        }
+        else if(auto it = urlResponse.find("response")) {
+          if(it.IsString()) {
+            json response;
+            if(response.parse(it.GetString())) {
+              if(callback) {
+                callback(response);
+              }
+            }
+            else {
+              callback({
+                {"error", response.error()},
+                });
+            }
+          }
+          else {
+            if(callback) {
+              callback({
+                {"error", "Response is not a string."},
+                });
+            }
+          }
+        }
+      });
+    }
+    else {
+      if(callback) {
+        callback({
+          {"error", "Invalid player account ID."},
+          });
+      }
+    }
+  });
+}
+
 void ogalib::GetActiveBattlepass(std::function<void(const json&)> callback) {
   ogalibRequireInit;
 
   WaitForLogin([=]() {
     json sendURLParams;
     sendURLParams["usesAPIKey"] = true;
-    sendURLParams["ignoreSSLErrors"] = true;
 
     SendURL(string_printf("%s/GetActiveBattlepass/v1/", ogalibData.baseAPI.c_str()).c_str(), sendURLParams, [=](const json& response) {
       if(auto it = response.find("error")) {
         if(callback) {
           callback({
-            {"error", it.c_str()},
+            {"error", it.cstr()},
             });
         }
       }
       else if(auto it = response.find("response")) {
-        json js;
-        if(js.parse(it.c_str())) {
-          if(!js.find("error")) {
-            if(js.size() > 0) {
-              auto battlepass = js.at(0);
-              if(auto itTiers = battlepass.find("tiers")) {
-                for(auto& tier: itTiers) {
-                  if(auto itURL = tier.find("rewardAssetURL")) {
-                    auto url = itURL.GetString();
-                    if(!url.empty()) {
-                      // Get the asset without a callback which caches the asset in the process.
-                      GetAssetByURL(url.c_str());
+        if(it.IsString()) {
+          json js;
+          if(js.parse(it.cstr())) {
+            if(!js.find("error")) {
+              if(js.size() > 0) {
+                auto battlepass = js.at(0);
+                if(auto itTiers = battlepass.find("tiers")) {
+                  for(auto& tier: itTiers) {
+                    if(auto itURL = tier.find("rewardAssetURL")) {
+                      auto url = itURL.GetString();
+                      if(!url.empty()) {
+                        // Get the asset without a callback which caches the asset in the process.
+                        GetAssetByURL(url.c_str());
+                      }
                     }
                   }
                 }
               }
             }
-          }
 
-          if(callback) {
-            callback(js);
+            if(callback) {
+              callback(js);
+            }
+          }
+          else {
+            if(callback) {
+              callback({
+                {"error", js.error()},
+                });
+            }
           }
         }
         else {
-          callback({
-            {"error", js.error()},
-            });
+          if(callback) {
+            callback({
+              {"error", "Response is not a string."},
+              });
+          }
         }
       }
       else {
@@ -508,25 +628,33 @@ void ogalib::GetBattlepassProgress(size_t battlepassId, std::function<void(const
 
     json sendURLParams;
     sendURLParams["usesAPIKey"] = true;
-    sendURLParams["ignoreSSLErrors"] = true;
 
     SendURL(string_printf("%s/GetBattlepassProgress/v1/%s", ogalibData.baseAPI.c_str(), params.c_str()).c_str(), sendURLParams, [=](const json& response) {
       if(auto it = response.find("error")) {
         if(callback) {
           callback({
-            {"error", it.c_str()},
+            {"error", it.cstr()},
             });
         }
       }
       else if(auto it = response.find("response")) {
-        if(callback) {
-          json js;
-          if(js.parse(it.c_str())) {
-            callback(js);
+        if(it.IsString()) {
+          if(callback) {
+            json js;
+            if(js.parse(it.cstr())) {
+              callback(js);
+            }
+            else {
+              callback({
+                {"error", js.error()},
+                });
+            }
           }
-          else {
+        }
+        else {
+          if(callback) {
             callback({
-              {"error", js.error()},
+              {"error", "Response is not a string."},
               });
           }
         }
@@ -562,25 +690,33 @@ void ogalib::IncBattlepassProgress(size_t battlepassId, size_t amount, std::func
 
     json sendURLParams;
     sendURLParams["usesAPIKey"] = true;
-    sendURLParams["ignoreSSLErrors"] = true;
 
     SendURL(string_printf("%s/IncBattlepassProgress/v1/%s", ogalibData.baseAPI.c_str(), params.c_str()).c_str(), sendURLParams, [=](const json& response) {
       if(auto it = response.find("error")) {
         if(callback) {
           callback({
-            {"error", it.c_str()},
+            {"error", it.cstr()},
             });
         }
       }
       else if(auto it = response.find("response")) {
-        if(callback) {
-          json js;
-          if(js.parse(it.c_str())) {
-            callback(js);
+        if(it.IsString()) {
+          if(callback) {
+            json js;
+            if(js.parse(it.cstr())) {
+              callback(js);
+            }
+            else {
+              callback({
+                {"error", js.error()},
+                });
+            }
           }
-          else {
+        }
+        else {
+          if(callback) {
             callback({
-              {"error", js.error()},
+              {"error", "Response is not a string."},
               });
           }
         }
@@ -616,27 +752,95 @@ void ogalib::ResetBattlepassProgress(size_t battlepassId, std::function<void(con
 
     json sendURLParams;
     sendURLParams["usesAPIKey"] = true;
-    sendURLParams["ignoreSSLErrors"] = true;
 
     SendURL(string_printf("%s/ResetBattlepassProgress/v1/%s", ogalibData.baseAPI.c_str(), params.c_str()).c_str(), sendURLParams, [=](const json& response) {
       if(auto it = response.find("error")) {
         if(callback) {
           callback({
-            {"error", it.c_str()},
+            {"error", it.cstr()},
             });
         }
       }
       else if(auto it = response.find("response")) {
-        if(callback) {
-          json js;
-          if(js.parse(it.c_str())) {
-            callback(js);
+        if(it.IsString()) {
+          if(callback) {
+            json js;
+            if(js.parse(it.cstr())) {
+              callback(js);
+            }
+            else {
+              callback({
+                {"error", js.error()},
+                });
+            }
           }
-          else {
+        }
+        else {
+          if(callback) {
             callback({
-              {"error", js.error()},
+              {"error", "Response is not a string."},
               });
           }
+        }
+      }
+      else {
+        if(callback) {
+          callback({
+            {"error", "Response not found."},
+            });
+        }
+      }
+    });
+  });
+}
+
+void ogalib::GetReward(size_t id, std::function<void(const json&)> callback) {
+  ogalibAssert(ogalibData.initialized, "OGA is not initialized.");
+
+  WaitForLogin([=]() {
+    std::string params = string_printf("?id=%zu", id);
+    if(ogalibData.encodeURLRequests)
+      params = EncodeURL(params.c_str());
+
+    json sendURLParams;
+    sendURLParams["usesAPIKey"] = true;
+
+    SendURL(string_printf("%s/GetReward/v1/%s", ogalibData.baseAPI.c_str(), params.c_str()).c_str(), sendURLParams, [=](const json& response) {
+      if(auto it = response.find("error")) {
+        if(callback) {
+          callback({
+            {"error", it.cstr()},
+            });
+        }
+      }
+      else if(auto it = response.find("response")) {
+        json js;
+        if(js.parse(it.cstr())) {
+          if(!js.find("error")) {
+            if(js.size() > 0) {
+              auto battlepass = js.at(0);
+              if(auto itTiers = battlepass.find("tiers")) {
+                for(auto& tier: itTiers) {
+                  if(auto itURL = tier.find("rewardAssetURL")) {
+                    std::string url = itURL.GetString();
+                    if(!url.empty()) {
+                      // Get the asset without a callback which caches the asset in the process.
+                      GetAssetByURL(url.c_str());
+                    }
+                  }
+                }
+              }
+            }
+          }
+
+          if(callback) {
+            callback(js);
+          }
+        }
+        else {
+          callback({
+            {"error", js.error()},
+            });
         }
       }
       else {
@@ -730,10 +934,6 @@ std::string ogalib::EncodeURL(const char* f, ...) {
   return result.str();
 }
 
-static __inline char FromHex(char c) {
-  return isdigit(c) ? c - '0' : tolower(c) - 'a' + 10;
-}
-
 std::string ogalib::DecodeURL(const char* f) {
   std::string b(f ? f : "");
   char h;
@@ -790,4 +990,6 @@ void ogalib::AssertCore(const char* file, uint32_t line, const char* f, ...) {
 
   va_end(ap2);
   va_end(ap);
+
+  (void) wait;
 }

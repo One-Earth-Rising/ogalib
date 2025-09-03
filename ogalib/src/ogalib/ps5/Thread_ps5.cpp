@@ -136,6 +136,8 @@ native(NULL) {
     }
 
     scePthreadMutexattrDestroy(&attr);
+
+    (void) err;
   }
   else {
     ogalibAssert(false, "Could not allocate native data for thread mutex.");
@@ -150,6 +152,8 @@ ThreadMutex::~ThreadMutex() {
     ogalibAssert(err >= SCE_OK, "Error deleting thread mutex: scePthreadMutexDestroy, 0x%08X", err);
 
     delete nativePS5;
+
+    (void) err;
   }
 }
 
@@ -307,6 +311,10 @@ size_t Thread::GetDeviceThreadCount() {
   return 13;
 }
 
+int64_t Thread::GetCurrentThreadId() {
+  return scePthreadGetthreadid();
+}
+
 ThreadCondition::ThreadCondition(const char* name):
 native(nullptr) {
   this->name = name ? name : "";
@@ -328,6 +336,8 @@ native(nullptr) {
     scePthreadCondInit(&nativePS5->condition, NULL, useName.c_str());
 
     scePthreadMutexattrDestroy(&attr);
+
+    (void) err;
   }
 }
 
@@ -346,6 +356,8 @@ ThreadCondition::~ThreadCondition() {
     delete nativePS5;
     native = nullptr;
   }
+
+  (void) err;
 }
 
 bool ThreadCondition::LockMutex() {
@@ -501,7 +513,7 @@ void ThreadCondition::ShutdownThread(Thread*& thread, bool& wait) {
 
 void* ogalib::ThreadEntryFunction(void* param) {
   Thread* thread = (Thread*) param;
-  thread->threadId = scePthreadGetthreadid();
+  thread->threadId = ogalib::Thread::GetCurrentThreadId();
 
   if(thread->entry) {
     thread->result = thread->entry(thread->param);

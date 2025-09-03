@@ -15,13 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\ogalib\md5\md5.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\ogalib\ps5\ps5_ogalib.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\ogalib\steam\steam_ogalib.h">
+    <ClInclude Include="stdafx\stdafx.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\ogalib\Config.h">
@@ -33,7 +27,13 @@
     <ClInclude Include="include\ogalib\json.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\ogalib\md5\md5.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="include\ogalib\ogalib.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\ogalib\steam\ogalib_steam.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\ogalib\Thread.h">
@@ -42,30 +42,9 @@
     <ClInclude Include="include\ogalib\Types.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="stdafx\stdafx.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx\stdafx.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\ogalib\md5\md5.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\ogalib\ps5\ps5_ogalib.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\ogalib\ps5\ps5_Thread.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\ogalib\steam\steam_ogalib.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\ogalib\windows\windows_ogalib.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\ogalib\windows\windows_Thread.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\ogalib\Job.cpp">
@@ -74,10 +53,22 @@
     <ClCompile Include="src\ogalib\json.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\ogalib\md5\md5.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="src\ogalib\ogalib.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\ogalib\steam\ogalib_steam.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="src\ogalib\Thread.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ogalib\windows\ogalib_windows.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ogalib\windows\Thread_windows.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

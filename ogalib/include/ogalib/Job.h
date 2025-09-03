@@ -47,7 +47,6 @@ enum class JobType {
 
 class Job {
 friend void Init(const json& params);
-friend void WaitForNoJobs();
 friend void Shutdown();
 friend void Process();
 friend void* JobThread(void*);
@@ -58,7 +57,6 @@ private:
   std::function<void(Job&)> response;
   ogalib::Thread* thread;
   bool completed;
-  bool canceled;
   JobType type;
 
 public:
@@ -80,15 +78,16 @@ private:
 public:
 
   void Call(void* param = nullptr, const std::string& error = std::string());
-  void Cancel();
-  void Shutdown();
+
+public:
+
+  static bool HasJobs();
 
 private:
 
   static void InitGlobal();
   static void ShutdownGlobal();
   static void ProcessGlobal();
-  static bool HasJobs();
 
   static void InitWorkerThread();
   static void ShutdownWorkerThread();

@@ -159,13 +159,6 @@ void ogalib::SetAPIKey(const std::string& apiKey) {
   ogalibData.apiKey = apiKey;
 }
 
-void ogalib::WaitForNoJobs() {
-  while(Job::HasJobs()) {
-    ogalib::Process();
-    Thread::Yield();
-  }
-}
-
 void ogalib::SetGlobalSendURLParams(const json& params) {
   ogalibData.globalSendURLParams = params;
 }
@@ -730,10 +723,6 @@ std::string ogalib::EncodeURL(const char* f, ...) {
   return result.str();
 }
 
-static __inline char FromHex(char c) {
-  return isdigit(c) ? c - '0' : tolower(c) - 'a' + 10;
-}
-
 std::string ogalib::DecodeURL(const char* f) {
   std::string b(f ? f : "");
   char h;
@@ -789,4 +778,11 @@ void ogalib::AssertCore(const char* file, uint32_t line, const char* f, ...) {
 
   va_end(ap2);
   va_end(ap);
+}
+
+void ogalib::WaitForNoJobs() {
+  while(Job::HasJobs()) {
+    ogalib::Process();
+    Thread::Yield();
+  }
 }

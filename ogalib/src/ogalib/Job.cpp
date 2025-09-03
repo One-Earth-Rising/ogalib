@@ -55,8 +55,6 @@ static uint32_t* workerThreadNumbers = nullptr;
 static uint32_t workerThreadCount = 0;
 static uint32_t workerThreadIndex = 0;
 
-static const std::string CanceledErrorStr("canceled");
-
 ////////////////////////////////////////////////////////////////////////////////
 // Functions
 ////////////////////////////////////////////////////////////////////////////////
@@ -75,7 +73,6 @@ callback(callback),
 response(response),
 thread(nullptr),
 completed(false),
-canceled(false),
 type(type) {
   InitCommon();
 }
@@ -85,7 +82,6 @@ callback(callback),
 response(response),
 thread(nullptr),
 completed(false),
-canceled(false),
 type(type),
 data(data) {
   InitCommon();
@@ -138,14 +134,6 @@ void Job::Call(void* param, const std::string& error) {
   if(response) {
     response(*this);
   }
-}
-
-void Job::Cancel() {
-  canceled = true;
-}
-
-void Job::Shutdown() {
-
 }
 
 void* ogalib::JobThread(void* param) {
@@ -206,11 +194,7 @@ void Job::ProcessGlobal() {
   workerThreadMutex->Unlock();
 
   for(auto jc: processJobs) {
-    if(jc->canceled) {
-      jc->Call(&jc->data, CanceledErrorStr);
-      removeJobs.push_back(jc);
-    }
-    else if(jc->completed) {
+    if(jc->completed) {
       jc->Call(&jc->data);
       removeJobs.push_back(jc);
     }
@@ -230,11 +214,7 @@ void Job::ProcessGlobal() {
   jobMutex->Unlock();
 
   for(auto jc: processJobs) {
-    if(jc->canceled) {
-      jc->Call(&jc->data, CanceledErrorStr);
-      removeJobs.push_back(jc);
-    }
-    else if(jc->completed) {
+    if(jc->completed) {
       jc->Call(&jc->data);
       removeJobs.push_back(jc);
     }
@@ -300,6 +280,15 @@ void Job::ShutdownWorkerThread() {
       workerThreadCondition[i] = nullptr;
     }
   }
+
+  workerThreadMutex->Lock();
+  for(auto jc: jobCompletedStack) {
+    delete jc;
+  }
+  jobCompletedStack.clear();
+  workerThreadMutex->Unlock();
+
+  ogalibAssert(!HasJobs(), "Expected to find no more jobs.");
 
   if(workerThreadMutex) {
     delete workerThreadMutex;

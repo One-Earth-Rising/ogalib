@@ -26,13 +26,34 @@ SOFTWARE.
 
 #pragma once
 
-#if defined(__PROSPERO__)
+#if defined(OGALIB_USING_STEAM)
 
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <np.h>
+#include <steam/steam_api.h>
+
+////////////////////////////////////////////////////////////////////////////////
+// Defines
+////////////////////////////////////////////////////////////////////////////////
+
+#define OGALIB_STEAM_AUTH_SESSION_TICKET_SIZE 1024
+
+////////////////////////////////////////////////////////////////////////////////
+// Enums
+////////////////////////////////////////////////////////////////////////////////
+
+namespace ogalib {
+
+typedef enum {
+  DataSteamAuthSessionTicketStateNone = 0,
+  DataSteamAuthSessionTicketStateWaiting,
+  DataSteamAuthSessionTicketStateReady,
+  DataSteamAuthSessionTicketStateError,
+} DataSteamAuthSessionTicketState;
+
+};
 
 ////////////////////////////////////////////////////////////////////////////////
 // Classes
@@ -40,20 +61,26 @@ SOFTWARE.
 
 namespace ogalib {
 
-class DataPS5 {
+class DataSteam {
 public:
 
-  SceUserServiceUserId initialUserId;
+  bool initializedSteam;
+  bool steamAPIInitEnabled;
 
-  int npStateCallbackId;
-  int netPoolId;
-  int sslContextId;
-  int httpContextId;
-  int http2ContextId;
+  u64 appId;
+
+  u64 authSessionTicketAccountId;
+  u8 authSessionTicket[OGALIB_STEAM_AUTH_SESSION_TICKET_SIZE];
+  u32 authSessionTicketSize;
+  std::function<void(const json&)> authSessionTicketCallback;
+  HAuthTicket authSessionTicketHandle;
+  DataSteamAuthSessionTicketState authSessionTicketState;
+
+  STEAM_CALLBACK(DataSteam, OnGetAuthSessionTicketResponse, GetAuthSessionTicketResponse_t, cbGetAuthSessionTicketResponse);
 
 public:
 
-  DataPS5();
+  DataSteam();
 
 };
 
@@ -65,9 +92,10 @@ public:
 
 namespace ogalib {
 
-void InitPS5();
-void FinalizePS5();
-void LoginUsingPS5(std::function<void(const json&)> callback);
+void InitSteam();
+void ShutdownSteam();
+void ProcessSteam();
+void LoginUsingSteam(std::function<void(const json&)> callback);
 
 };
 

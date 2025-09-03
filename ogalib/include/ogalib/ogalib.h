@@ -50,7 +50,7 @@ public:
 
   bool initialized;
   json initParams;
-  
+
   std::string baseAPI;
   std::string apiKey;
   json globalSendURLParams;
@@ -81,35 +81,41 @@ namespace ogalib {
 void Init(const json& params = json());
 void Shutdown();
 void Process();
-
 bool IsInitialized();
 
+// General Configuration
 void SetBaseAPI(const std::string& baseAPI, bool encodeURLRequests = false);
 void SetAPIKey(const std::string& apiKey);
-
-ThreadMutex* GetJobMutex();
-void WaitForNoJobs();
-
 void SetGlobalSendURLParams(const json& params);
 
+// Communication
 void SendURL(const std::string& url);
 void SendURL(const std::string& url, const json& params);
 void SendURL(const std::string& url, const std::function<void(const json&)>& callback);
 void SendURL(const std::string& url, const json& params, const std::function<void(const json&)>& callback);
 bool SendURL(const std::string& url, const json& params, json& result);
+void GetAssetByURL(const std::string& url, std::function<void(const json&)> callback = nullptr);
 
+// User Login and Session
 void Login(std::function<void(const json&)> callback = nullptr);
 bool IsLoginInProgress();
 void WaitForLogin(std::function<void()> callback = nullptr);
+size_t GetUserId();
 
-void GetAssetByURL(const std::string& url, std::function<void(const json&)> callback = nullptr);
+// Player OGA Collection
+void GetPlayerOGACollection(std::function<void(const json&)> callback);
+void GetPlayerOGACollection(const json& params, std::function<void(const json&)> callback);
 
+// Battlepass
 void GetActiveBattlepass(std::function<void(const json&)> callback);
-
 void GetBattlepassProgress(size_t battlepassId, std::function<void(const json&)> callback = nullptr);
 void IncBattlepassProgress(size_t battlepassId, size_t amount, std::function<void(const json&)> callback = nullptr);
 void ResetBattlepassProgress(size_t battlepassId, std::function<void(const json&)> callback = nullptr);
 
+// Rewards
+void GetReward(size_t id, std::function<void(const json&)> callback);
+
+// Utility
 std::string string_printf(const char* f, ...);
 std::string string_vprintf(const char* f, va_list ap, va_list ap2);
 std::string EncodeURL(const char* f, ...);
