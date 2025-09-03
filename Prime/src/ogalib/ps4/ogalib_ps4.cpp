@@ -1,37 +1,11 @@
-/*
-ogalib
-
-MIT License
-
-Copyright (c) 2024 Sean Reid (email@seanreid.ca)
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-*/
-
-#if defined(__PROSPERO__)
+#if defined(__ORBIS__)
 
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <ogalib/ogalib.h>
-#include <ogalib/ps5/ps5_ogalib.h>
+#include <ogalib/ps4/ogalib_ps4.h>
 #include <libsysmodule.h>
 #include <libhttp.h>
 #include <libssl.h>
@@ -44,31 +18,31 @@ using namespace ogalib;
 // Defines
 ////////////////////////////////////////////////////////////////////////////////
 
-#define OGALIB_PS5_PSN_CLIENT_ID "65c86568-da8d-4ad9-bca0-a6eff270f945"
+#define OGALIB_PS4_PSN_CLIENT_ID "65c86568-da8d-4ad9-bca0-a6eff270f945"
 
-#define OGALIB_PS5_URL_SSL_HEAP_SIZE          (304 * 1024)
-#define OGALIB_PS5_URL_HTTP_HEAP_SIZE         (256 * 1024)
-#define OGALIB_PS5_URL_NET_HEAP_SIZE          (16 * 1024)
-#define OGALIB_PS5_URL_RESOLVE_TIMEOUT        30
-#define OGALIB_PS5_URL_CONNECT_TIMEOUT        30
-#define OGALIB_PS5_URL_REQUEST_TIMEOUT        30
-#define OGALIB_PS5_URL_RECEIVE_TIMEOUT        30
-#define OGALIB_PS5_URL_HTTP_USER_AGENT        ""
-#define OGALIB_PS5_URL_STACK_RECV_BUFFER_SIZE (8 * 1024)
-#define OGALIB_PS5_URL_RECV_BUFFER_SIZE       (256 * 1024)
+#define OGALIB_PS4_URL_SSL_HEAP_SIZE          (304 * 1024)
+#define OGALIB_PS4_URL_HTTP_HEAP_SIZE         (256 * 1024)
+#define OGALIB_PS4_URL_NET_HEAP_SIZE          (16 * 1024)
+#define OGALIB_PS4_URL_RESOLVE_TIMEOUT        30
+#define OGALIB_PS4_URL_CONNECT_TIMEOUT        30
+#define OGALIB_PS4_URL_REQUEST_TIMEOUT        30
+#define OGALIB_PS4_URL_RECEIVE_TIMEOUT        30
+#define OGALIB_PS4_URL_HTTP_USER_AGENT        ""
+#define OGALIB_PS4_URL_STACK_RECV_BUFFER_SIZE (8 * 1024)
+#define OGALIB_PS4_URL_RECV_BUFFER_SIZE       (256 * 1024)
 
 ////////////////////////////////////////////////////////////////////////////////
 // Variables
 ////////////////////////////////////////////////////////////////////////////////
 
 extern ogalib::Data ogalibData;
-ogalib::DataPS5 ogalibDataPS5;
+ogalib::DataPS4 ogalibDataPS4;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Functions
 ////////////////////////////////////////////////////////////////////////////////
 
-DataPS5::DataPS5():
+DataPS4::DataPS4():
 initialUserId(SCE_USER_SERVICE_USER_ID_INVALID),
 npStateCallbackId(-1),
 netPoolId(-1),
@@ -78,11 +52,11 @@ http2ContextId(-1) {
 
 }
 
-void ogalib::InitPS5() {
+void ogalib::InitPS4() {
   int err;
 
   err = sceSysmoduleLoadModule(SCE_SYSMODULE_NP_AUTH);
-  ogalibAssert(err >= SCE_OK, "Error in call to sceSysmoduleLoadModule(SCE_SYSMODULE_NP_AUTH): 0x%08X", err);
+  PrimeAssert(err >= SCE_OK, "Error in call to sceSysmoduleLoadModule(SCE_SYSMODULE_NP_AUTH): 0x%08X", err);
 
   const int HTTP2_MAX_CONCURRENT_REQUEST = 128;
   const int HTTP2_HEAP_SIZE_REQUIRED = (((HTTP2_MAX_CONCURRENT_REQUEST - 1) / 3) + 1) * 256 * 1024;
@@ -92,63 +66,63 @@ void ogalib::InitPS5() {
 
   err = sceNetPoolCreate("simple", NET_HEAP_SIZE, 0);
   ogalibAssert(err >= SCE_OK, "Error in call to sceNetPoolCreate: 0x%08X", err);
-  ogalibDataPS5.netPoolId = err;
+  ogalibDataPS4.netPoolId = err;
 
   err = sceSslInit(SSL_HEAP_SIZE);
   ogalibAssert(err >= SCE_OK, "Error in call to sceSslInit: 0x%08X", err);
-  ogalibDataPS5.sslContextId = err;
+  ogalibDataPS4.sslContextId = err;
 
-  err = sceHttpInit(ogalibDataPS5.netPoolId, ogalibDataPS5.sslContextId, OGALIB_PS5_URL_HTTP_HEAP_SIZE);
+  err = sceHttpInit(ogalibDataPS4.netPoolId, ogalibDataPS4.sslContextId, OGALIB_PS4_URL_HTTP_HEAP_SIZE);
   ogalibAssert(err >= SCE_OK, "Error in call to sceHttpInit: 0x%08X", err);
-  ogalibDataPS5.httpContextId = err;
+  ogalibDataPS4.httpContextId = err;
 
-  err = sceHttp2Init(ogalibDataPS5.netPoolId, ogalibDataPS5.sslContextId, HTTP2_HEAP_SIZE, 16);
+  err = sceHttp2Init(ogalibDataPS4.netPoolId, ogalibDataPS4.sslContextId, HTTP2_HEAP_SIZE, 16);
   ogalibAssert(err >= SCE_OK, "Error in call to sceHttp2Init: 0x%08X", err);
-  ogalibDataPS5.http2ContextId = err;
+  ogalibDataPS4.http2ContextId = err;
 }
 
-void ogalib::FinalizePS5() {
+void ogalib::ShutdownPS4() {
   int err;
 
-  if(ogalibDataPS5.http2ContextId >= 0) {
-    err = sceHttp2Term(ogalibDataPS5.http2ContextId);
+  if(ogalibDataPS4.http2ContextId >= 0) {
+    err = sceHttp2Term(ogalibDataPS4.http2ContextId);
     ogalibAssert(err >= SCE_OK, "Error in call to sceHttp2Term: 0x%08X", err);
-    ogalibDataPS5.http2ContextId = -1;
+    ogalibDataPS4.http2ContextId = -1;
   }
 
-  if(ogalibDataPS5.httpContextId >= 0) {
-    err = sceHttpTerm(ogalibDataPS5.httpContextId);
+  if(ogalibDataPS4.httpContextId >= 0) {
+    err = sceHttpTerm(ogalibDataPS4.httpContextId);
     ogalibAssert(err >= SCE_OK, "Error in call to sceHttpTerm: 0x%08X", err);
-    ogalibDataPS5.httpContextId = -1;
+    ogalibDataPS4.httpContextId = -1;
   }
 
-  if(ogalibDataPS5.sslContextId >= 0) {
-    err = sceSslTerm(ogalibDataPS5.sslContextId);
+  if(ogalibDataPS4.sslContextId >= 0) {
+    err = sceSslTerm(ogalibDataPS4.sslContextId);
     ogalibAssert(err >= SCE_OK, "Error in call to sceSslTerm: 0x%08X", err);
-    ogalibDataPS5.sslContextId = -1;
+    ogalibDataPS4.sslContextId = -1;
   }
 
-  if(ogalibDataPS5.netPoolId >= 0) {
-    err = sceNetPoolDestroy(ogalibDataPS5.netPoolId);
+  if(ogalibDataPS4.netPoolId >= 0) {
+    err = sceNetPoolDestroy(ogalibDataPS4.netPoolId);
     ogalibAssert(err >= SCE_OK, "Error in call to sceNetPoolDestroy: 0x%08X", err);
-    ogalibDataPS5.netPoolId = -1;
+    ogalibDataPS4.netPoolId = -1;
   }
 
   err = sceSysmoduleUnloadModule(SCE_SYSMODULE_NP_AUTH);
-  ogalibAssert(err >= SCE_OK, "Error in call to sceSysmoduleUnloadModule(SCE_SYSMODULE_NP_AUTH): 0x%08X", err);
+  PrimeAssert(err >= SCE_OK, "Error in call to sceSysmoduleUnloadModule(SCE_SYSMODULE_NP_AUTH): 0x%08X", err);
 }
 
-void ogalib::LoginUsingPS5(std::function<void(const json&)> callback) {
-  if(ogalibDataPS5.initialUserId == SCE_USER_SERVICE_USER_ID_INVALID) {
+void ogalib::LoginUsingPS4(std::function<void(const json&)> callback) {
+  if(ogalibDataPS4.initialUserId == SCE_USER_SERVICE_USER_ID_INVALID) {
     int err;
 
-    err = sceUserServiceGetInitialUser(&ogalibDataPS5.initialUserId);
+    err = sceUserServiceGetInitialUser(&ogalibDataPS4.initialUserId);
 
     if(err == SCE_USER_SERVICE_ERROR_NOT_INITIALIZED) {
       err = sceUserServiceInitialize(NULL);
       ogalibAssert(err >= SCE_OK, "Error in call to sceUserServiceInitialize: 0x%08X", err);
 
-      err = sceUserServiceGetInitialUser(&ogalibDataPS5.initialUserId);
+      err = sceUserServiceGetInitialUser(&ogalibDataPS4.initialUserId);
       ogalibAssert(err >= SCE_OK, "Error in call to sceUserServiceGetInitialUser: 0x%08X", err);
 
       err = sceUserServiceTerminate();
@@ -156,7 +130,7 @@ void ogalib::LoginUsingPS5(std::function<void(const json&)> callback) {
     }
   }
 
-  if(ogalibDataPS5.initialUserId == SCE_USER_SERVICE_USER_ID_INVALID) {
+  if(ogalibDataPS4.initialUserId == SCE_USER_SERVICE_USER_ID_INVALID) {
     if(callback) {
       callback({
         {"error", "Unknown initial system user."},
@@ -186,28 +160,28 @@ void ogalib::LoginUsingPS5(std::function<void(const json&)> callback) {
     SceNpAccountId psnAccountId;
 
     do {
-      err = sceNpGetAccountIdA(ogalibDataPS5.initialUserId, &psnAccountId);
+      err = sceNpGetAccountIdA(ogalibDataPS4.initialUserId, &psnAccountId);
       if(err < SCE_OK) {
-        ogalib_dbgprintf("Error in call to sceNpGetAccountIdA: 0x%08X\n", err);
+        dbgprintf("Error in call to sceNpGetAccountIdA: 0x%08X\n", err);
         break;
       }
 
       err = sceNpAuthCreateRequest();
       if(err < SCE_OK) {
-        ogalib_dbgprintf("Error in call to sceNpAuthCreateRequest: 0x%08X\n", err);
+        dbgprintf("Error in call to sceNpAuthCreateRequest: 0x%08X\n", err);
         break;
       }
       reqId = err;
 
-      strncpy(clientId.id, OGALIB_PS5_PSN_CLIENT_ID, SCE_NP_CLIENT_ID_MAX_LEN);
+      strncpy(clientId.id, OGALIB_PS4_PSN_CLIENT_ID, SCE_NP_CLIENT_ID_MAX_LEN);
       authParam.size = sizeof(authParam);
-      authParam.userId = ogalibDataPS5.initialUserId;
+      authParam.userId = ogalibDataPS4.initialUserId;
       authParam.clientId = &clientId;
       authParam.scope = "psn:s2s";
 
       err = sceNpAuthGetAuthorizationCodeV3(reqId, &authParam, &psnAuthorizationCodeData, &psnAuthorizationCodeIssuerId);
       if(err < SCE_OK) {
-        ogalib_dbgprintf("Error in call to sceNpAuthGetAuthorizationCode: 0x%08X\n", err);
+        dbgprintf("Error in call to sceNpAuthGetAuthorizationCode: 0x%08X\n", err);
 
         if(err == SCE_NP_ERROR_LATEST_PATCH_PKG_EXIST) {
 
@@ -222,7 +196,7 @@ void ogalib::LoginUsingPS5(std::function<void(const json&)> callback) {
     if(reqId > 0) {
       err = sceNpAuthDeleteRequest(reqId);
       if(err < SCE_OK) {
-        ogalib_dbgprintf("Error in call to sceNpAuthDeleteRequest: 0x%08X\n", err);
+        dbgprintf("Error in call to sceNpAuthDeleteRequest: 0x%08X\n", err);
       }
     }
 
@@ -237,14 +211,18 @@ void ogalib::LoginUsingPS5(std::function<void(const json&)> callback) {
 
       std::string accountId = job.data["accountId"].GetString();
       std::string authorizationCode = job.data["authorizationCode"].GetString();
-      int64_t issuerId = job.data["issuerId"].GetInt64();
+      s64 issuerId = job.data["issuerId"].GetInt64();
 
       std::string params = string_printf("?network=psn&psnAccountId=%s&psnAuthorizationCode=%s&psnAuthorizationCodeIssuerId=%d", EncodeURL(accountId.c_str()).c_str(), EncodeURL(authorizationCode.c_str()).c_str(), issuerId);
       if(ogalibData.encodeURLRequests)
         params = EncodeURL(params.c_str());
 
       json sendURLParams;
-      sendURLParams["ignoreSSLErrors"] = true;
+      sendURLParams["usesAPIKey"] = true;
+
+      if(ogalibData.ignoreSSLErrors) {
+        sendURLParams["ignoreSSLErrors"] = true;
+      }
 
       std::string url = string_printf("%s/Login/v1/%s", ogalibData.baseAPI.c_str(), params.c_str()).c_str();
       SendURL(url.c_str(), sendURLParams, [=](const json& response) {
@@ -253,22 +231,22 @@ void ogalib::LoginUsingPS5(std::function<void(const json&)> callback) {
         if(auto it = response.find("error")) {
           if(callback) {
             callback({
-              {"error", it.c_str()},
+              {"error", it.cstr()},
             });
           }
         }
         else if(auto it = response.find("response")) {
           json loginResponse;
-          if(loginResponse.parse(it.GetString())) {
+          if(loginResponse.parse(it.str())) {
             if(auto itError = loginResponse.find("error")) {
               if(callback) {
                 callback({
-                  {"error", itError.c_str()},
+                  {"error", itError.cstr()},
                 });
               }
             }
             else if(auto itResp = loginResponse.find("resp")) {
-              auto resp = itResp.GetString();
+              auto resp = itResp.str();
               if(resp == "ok") {
                 if(auto itId = loginResponse.find("id")) {
                   auto& id = itId.value();
@@ -342,20 +320,24 @@ void ogalib::LoginUsingPS5(std::function<void(const json&)> callback) {
 
       if(callback) {
         callback({
-          {"error", "Unable to request PSN authorization."},
+          {"error", "Unable to request PS4 authorization."},
         });
       }
     }
   });
 }
 
-bool ogalib::SendURL(const std::string& url, const json& params, json& result) {
+bool ogalib::SendURL(const char* url, const json& params, json& result, std::string apiKey) {
   if(!ogalibData.initialized) {
     ogalibAssert(false, "ogalib is not initialized.");
     return false;
   }
 
-  if(url.size() == 0)
+  if(!url || url[0] == 0)
+    return false;
+
+  std::string urlStr = url;
+  if(urlStr.size() == 0)
     return false;
 
   int templateId = 0;
@@ -365,22 +347,27 @@ bool ogalib::SendURL(const std::string& url, const json& params, json& result) {
   int err;
   std::string response;
 
-  err = sceHttpCreateTemplate(ogalibDataPS5.httpContextId, OGALIB_PS5_URL_HTTP_USER_AGENT, SCE_HTTP_VERSION_1_1, SCE_TRUE);
+  result["statusCode"] = 0;
+  result["statusText"] = "";
+
+  err = sceHttpCreateTemplate(ogalibDataPS4.httpContextId, OGALIB_PS4_URL_HTTP_USER_AGENT, SCE_HTTP_VERSION_1_1, SCE_TRUE);
   if(err < 0) {
-    ogalib_dbgprintf("Error in call to sceHttpCreateTemplate: 0x%08X\n", err);
+    dbgprintf("Error in call to sceHttpCreateTemplate: 0x%08X\n", err);
   }
   else {
     templateId = err;
 
-    err = sceHttpCreateConnectionWithURL(templateId, url.c_str(), SCE_TRUE);
+    ogalibAssert(url, "No webnet request url has been specified.");
+
+    err = sceHttpCreateConnectionWithURL(templateId, url, SCE_TRUE);
     if(err < 0) {
-      ogalib_dbgprintf("Error in call to sceHttpCreateConnectionWithURL: 0x%08X\n", err);
+      dbgprintf("Error in call to sceHttpCreateConnectionWithURL: 0x%08X\n", err);
     }
     connectionId = err;
 
     std::string method;
     if(auto it = params.find("method")) {
-      method = it.GetString();
+      method = it.str();
     }
     else {
       method = "GET";
@@ -388,53 +375,49 @@ bool ogalib::SendURL(const std::string& url, const json& params, json& result) {
 
     if(method == "POST") {
       if(auto it = params.find("data")) {
-        size_t dataSize;
-        const void* data = it.GetStringData(&dataSize);
-        err = sceHttpCreateRequestWithURL(connectionId, SCE_HTTP_METHOD_POST, url.c_str(), dataSize);
+        const auto& data = it.str();
+        err = sceHttpCreateRequestWithURL(connectionId, SCE_HTTP_METHOD_POST, url, data.size());
         if(err < 0) {
-          ogalib_dbgprintf("Error in call to sceHttpCreateRequestWithURL: 0x%08X\n", err);
+          dbgprintf("Error in call to sceHttpCreateRequestWithURL: 0x%08X\n", err);
         }
         requestId = err;
       }
       else {
-        err = sceHttpCreateRequestWithURL(connectionId, SCE_HTTP_METHOD_POST, url.c_str(), 0);
+        err = sceHttpCreateRequestWithURL(connectionId, SCE_HTTP_METHOD_POST, url, 0);
         if(err < 0) {
-          ogalib_dbgprintf("Error in call to sceHttpCreateRequestWithURL: 0x%08X\n", err);
+          dbgprintf("Error in call to sceHttpCreateRequestWithURL: 0x%08X\n", err);
         }
         requestId = err;
       }
     }
     else {
-      err = sceHttpCreateRequestWithURL(connectionId, SCE_HTTP_METHOD_GET, url.c_str(), 0);
+      err = sceHttpCreateRequestWithURL(connectionId, SCE_HTTP_METHOD_GET, url, 0);
       if(err < 0) {
-        ogalib_dbgprintf("Error in call to sceHttpCreateRequestWithURL: 0x%08X\n", err);
+        dbgprintf("Error in call to sceHttpCreateRequestWithURL: 0x%08X\n", err);
       }
       requestId = err;
     }
 
     if(auto it = params.find("data")) {
       if(auto it2 = params.find("contentType")) {
-        const auto contentType = it2.GetString();
+        const auto contentType = it2.str();
         err = sceHttpAddRequestHeader(requestId, "Content-Type", contentType.c_str(), SCE_HTTP_HEADER_OVERWRITE);
         if(err < 0) {
-          ogalib_dbgprintf("Error in call to sceHttpAddRequestHeader: 0x%08X\n", err);
+          dbgprintf("Error in call to sceHttpAddRequestHeader: 0x%08X\n", err);
         }
       }
       else {
         err = sceHttpAddRequestHeader(requestId, "Content-Type", "application/x-www-form-urlencoded", SCE_HTTP_HEADER_OVERWRITE);
         if(err < 0) {
-          ogalib_dbgprintf("Error in call to sceHttpAddRequestHeader: 0x%08X\n", err);
+          dbgprintf("Error in call to sceHttpAddRequestHeader: 0x%08X\n", err);
         }
       }
     }
 
-    if(auto it = params.find("authorizationBearerToken")) {
-      std::string authorizationBearerToken = it.GetString();
-      if(authorizationBearerToken.length() > 0) {
-        err = sceHttpAddRequestHeader(requestId, "Authorization", string_printf("Bearer %s", authorizationBearerToken.c_str()).c_str(), SCE_HTTP_HEADER_OVERWRITE);
-        if(err < 0) {
-          ogalib_dbgprintf("Error in call to sceHttpAddRequestHeader: 0x%08X\n", err);
-        }
+    if(apiKey.length() > 0) {
+      err = sceHttpAddRequestHeader(requestId, "Authorization", string_printf("Bearer %s", apiKey.c_str()).c_str(), SCE_HTTP_HEADER_OVERWRITE);
+      if(err < 0) {
+        dbgprintf("Error in call to sceHttpAddRequestHeader: 0x%08X\n", err);
       }
     }
 
@@ -449,88 +432,87 @@ bool ogalib::SendURL(const std::string& url, const json& params, json& result) {
     if(ignoreSSLErrors) {
       err = sceHttpsDisableOption(requestId, SCE_HTTPS_FLAG_SERVER_VERIFY);
       if(err != SCE_OK) {
-        ogalib_dbgprintf("Error in call to sceHttpsDisableOption(requestId, SCE_HTTPS_FLAG_SERVER_VERIFY): 0x%08X\n", err);
+        dbgprintf("Error in call to sceHttpsDisableOption(requestId, SCE_HTTPS_FLAG_SERVER_VERIFY): 0x%08X\n", err);
       }
 
       err = sceHttpsDisableOption(requestId, SCE_HTTPS_FLAG_CN_CHECK);
       if(err != SCE_OK) {
-        ogalib_dbgprintf("Error in call to sceHttpsDisableOption(requestId, SCE_HTTPS_FLAG_CN_CHECK): 0x%08X\n", err);
+        dbgprintf("Error in call to sceHttpsDisableOption(requestId, SCE_HTTPS_FLAG_CN_CHECK): 0x%08X\n", err);
       }
 
       err = sceHttpsDisableOption(requestId, SCE_HTTPS_FLAG_NOT_AFTER_CHECK);
       if(err != SCE_OK) {
-        ogalib_dbgprintf("Error in call to sceHttpsDisableOption(requestId, SCE_HTTPS_FLAG_NOT_AFTER_CHECK): 0x%08X\n", err);
+        dbgprintf("Error in call to sceHttpsDisableOption(requestId, SCE_HTTPS_FLAG_NOT_AFTER_CHECK): 0x%08X\n", err);
       }
 
       err = sceHttpsDisableOption(requestId, SCE_HTTPS_FLAG_NOT_BEFORE_CHECK);
       if(err != SCE_OK) {
-        ogalib_dbgprintf("Error in call to sceHttpsDisableOption(requestId, SCE_HTTPS_FLAG_NOT_BEFORE_CHECK): 0x%08X\n", err);
+        dbgprintf("Error in call to sceHttpsDisableOption(requestId, SCE_HTTPS_FLAG_NOT_BEFORE_CHECK): 0x%08X\n", err);
       }
 
       err = sceHttpsDisableOption(requestId, SCE_HTTPS_FLAG_KNOWN_CA_CHECK);
       if(err != SCE_OK) {
-        ogalib_dbgprintf("Error in call to sceHttpsDisableOption(requestId, SCE_HTTPS_FLAG_KNOWN_CA_CHECK): 0x%08X\n", err);
+        dbgprintf("Error in call to sceHttpsDisableOption(requestId, SCE_HTTPS_FLAG_KNOWN_CA_CHECK): 0x%08X\n", err);
       }
     }
     else {
       err = sceHttpsEnableOption(requestId, SCE_HTTPS_FLAG_SERVER_VERIFY);
       if(err != SCE_OK) {
-        ogalib_dbgprintf("Error in call to sceHttpsEnableOption(requestId, SCE_HTTPS_FLAG_SERVER_VERIFY): 0x%08X\n", err);
+        dbgprintf("Error in call to sceHttpsEnableOption(requestId, SCE_HTTPS_FLAG_SERVER_VERIFY): 0x%08X\n", err);
       }
 
       err = sceHttpsEnableOption(requestId, SCE_HTTPS_FLAG_CN_CHECK);
       if(err != SCE_OK) {
-        ogalib_dbgprintf("Error in call to sceHttpsEnableOption(requestId, SCE_HTTPS_FLAG_CN_CHECK): 0x%08X\n", err);
+        dbgprintf("Error in call to sceHttpsEnableOption(requestId, SCE_HTTPS_FLAG_CN_CHECK): 0x%08X\n", err);
       }
 
       err = sceHttpsEnableOption(requestId, SCE_HTTPS_FLAG_NOT_AFTER_CHECK);
       if(err != SCE_OK) {
-        ogalib_dbgprintf("Error in call to sceHttpsEnableOption(requestId, SCE_HTTPS_FLAG_NOT_AFTER_CHECK): 0x%08X\n", err);
+        dbgprintf("Error in call to sceHttpsEnableOption(requestId, SCE_HTTPS_FLAG_NOT_AFTER_CHECK): 0x%08X\n", err);
       }
 
       err = sceHttpsEnableOption(requestId, SCE_HTTPS_FLAG_NOT_BEFORE_CHECK);
       if(err != SCE_OK) {
-        ogalib_dbgprintf("Error in call to sceHttpsEnableOption(requestId, SCE_HTTPS_FLAG_NOT_BEFORE_CHECK): 0x%08X\n", err);
+        dbgprintf("Error in call to sceHttpsEnableOption(requestId, SCE_HTTPS_FLAG_NOT_BEFORE_CHECK): 0x%08X\n", err);
       }
 
       err = sceHttpsEnableOption(requestId, SCE_HTTPS_FLAG_KNOWN_CA_CHECK);
       if(err != SCE_OK) {
-        ogalib_dbgprintf("Error in call to sceHttpsEnableOption(requestId, SCE_HTTPS_FLAG_KNOWN_CA_CHECK): 0x%08X\n", err);
+        dbgprintf("Error in call to sceHttpsEnableOption(requestId, SCE_HTTPS_FLAG_KNOWN_CA_CHECK): 0x%08X\n", err);
       }
     }
 
-    err = sceHttpSetResolveTimeOut(requestId, OGALIB_PS5_URL_RESOLVE_TIMEOUT * 1000 * 1000);
+    err = sceHttpSetResolveTimeOut(requestId, OGALIB_PS4_URL_RESOLVE_TIMEOUT * 1000 * 1000);
     if(err < 0) {
-      ogalib_dbgprintf("Error in call to sceHttpAddRequestHeader: 0x%08X\n", err);
+      dbgprintf("Error in call to sceHttpAddRequestHeader: 0x%08X\n", err);
     }
 
-    err = sceHttpSetConnectTimeOut(requestId, OGALIB_PS5_URL_CONNECT_TIMEOUT * 1000 * 1000);
+    err = sceHttpSetConnectTimeOut(requestId, OGALIB_PS4_URL_CONNECT_TIMEOUT * 1000 * 1000);
     if(err < 0) {
-      ogalib_dbgprintf("Error in call to sceHttpAddRequestHeader: 0x%08X\n", err);
+      dbgprintf("Error in call to sceHttpAddRequestHeader: 0x%08X\n", err);
     }
 
-    err = sceHttpSetSendTimeOut(requestId, OGALIB_PS5_URL_REQUEST_TIMEOUT * 1000 * 1000);
+    err = sceHttpSetSendTimeOut(requestId, OGALIB_PS4_URL_REQUEST_TIMEOUT * 1000 * 1000);
     if(err < 0) {
-      ogalib_dbgprintf("Error in call to sceHttpAddRequestHeader: 0x%08X\n", err);
+      dbgprintf("Error in call to sceHttpAddRequestHeader: 0x%08X\n", err);
     }
 
-    err = sceHttpSetRecvTimeOut(requestId, OGALIB_PS5_URL_RECEIVE_TIMEOUT * 1000 * 1000);
+    err = sceHttpSetRecvTimeOut(requestId, OGALIB_PS4_URL_RECEIVE_TIMEOUT * 1000 * 1000);
     if(err < 0) {
-      ogalib_dbgprintf("Error in call to sceHttpAddRequestHeader: 0x%08X\n", err);
+      dbgprintf("Error in call to sceHttpAddRequestHeader: 0x%08X\n", err);
     }
 
     if(auto it = params.find("data")) {
-      size_t dataSize;
-      const void* data = it.GetStringData(&dataSize);
-      err = sceHttpSendRequest(requestId, data, dataSize);
+      const auto& data = it.str();
+      err = sceHttpSendRequest(requestId, data.c_str(), data.size());
       if(err < 0) {
-        ogalib_dbgprintf("Error in call to sceHttpSendRequest: 0x%08X\n", err);
+        dbgprintf("Error in call to sceHttpSendRequest: 0x%08X\n", err);
       }
     }
     else {
       err = sceHttpSendRequest(requestId, NULL, 0);
       if(err < 0) {
-        ogalib_dbgprintf("Error in call to sceHttpSendRequest: 0x%08X\n", err);
+        dbgprintf("Error in call to sceHttpSendRequest: 0x%08X\n", err);
       }
     }
 
@@ -548,6 +530,10 @@ bool ogalib::SendURL(const std::string& url, const json& params, json& result) {
         result["error"] = string_printf("Error in call to sceHttpGetStatusCode: 0x%08X\n", err);
       }
 
+      result["statusCode"] = statusCode;
+
+      // todo: sceHttpGetAllResponseHeaders for statusText
+
       int contentLengthType;
       uint64_t contentLength;
       err = sceHttpGetResponseContentLength(requestId, &contentLengthType, &contentLength);
@@ -557,14 +543,14 @@ bool ogalib::SendURL(const std::string& url, const json& params, json& result) {
       else {
         if(contentLengthType == SCE_HTTP_CONTENTLEN_EXIST || contentLengthType == SCE_HTTP_CONTENTLEN_CHUNK_ENC) {
           bool useStack = true;
-          if(contentLength >= OGALIB_PS5_URL_RECV_BUFFER_SIZE) {
-            char* recvBuff = new char[OGALIB_PS5_URL_RECV_BUFFER_SIZE];
+          if(contentLength >= OGALIB_PS4_URL_RECV_BUFFER_SIZE) {
+            char* recvBuff = new char[OGALIB_PS4_URL_RECV_BUFFER_SIZE];
             if(recvBuff) {
               useStack = false;
               bool go = true;
               while(go) {
                 go = false;
-                err = sceHttpReadData(requestId, recvBuff, OGALIB_PS5_URL_RECV_BUFFER_SIZE);
+                err = sceHttpReadData(requestId, recvBuff, OGALIB_PS4_URL_RECV_BUFFER_SIZE);
                 if(err < 0) {
                   result["error"] = string_printf("Error in call to sceHttpReadData: 0x%08X\n", err);
                 }
@@ -585,7 +571,7 @@ bool ogalib::SendURL(const std::string& url, const json& params, json& result) {
           }
             
           if(useStack) {
-            char recvBuff[OGALIB_PS5_URL_STACK_RECV_BUFFER_SIZE];
+            char recvBuff[OGALIB_PS4_URL_STACK_RECV_BUFFER_SIZE];
             bool go = true;
             while(go) {
               go = false;
@@ -610,23 +596,25 @@ bool ogalib::SendURL(const std::string& url, const json& params, json& result) {
   if(requestId) {
     err = sceHttpDeleteRequest(requestId);
     if(err < 0) {
-      ogalib_dbgprintf("Error in call to sceHttpDeleteRequest: 0x%08X\n", err);
+      dbgprintf("Error in call to sceHttpDeleteRequest: 0x%08X\n", err);
     }
   }
 
   if(connectionId) {
     err = sceHttpDeleteConnection(connectionId);
     if(err < 0) {
-      ogalib_dbgprintf("Error in call to sceHttpDeleteConnection: 0x%08X\n", err);
+      dbgprintf("Error in call to sceHttpDeleteConnection: 0x%08X\n", err);
     }
   }
 
   if(templateId) {
     err = sceHttpDeleteTemplate(templateId);
     if(err < 0) {
-      ogalib_dbgprintf("Error in call to sceHttpDeleteTemplate: 0x%08X\n", err);
+      dbgprintf("Error in call to sceHttpDeleteTemplate: 0x%08X\n", err);
     }
   }
+
+  result["statusCode"] = statusCode;
 
   bool resultValue = true;
 

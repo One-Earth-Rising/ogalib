@@ -26,34 +26,13 @@ SOFTWARE.
 
 #pragma once
 
-#if defined(OGALIB_USING_STEAM)
+#if defined(__ORBIS__)
 
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <steam/steam_api.h>
-
-////////////////////////////////////////////////////////////////////////////////
-// Defines
-////////////////////////////////////////////////////////////////////////////////
-
-#define OGALIB_STEAM_AUTH_SESSION_TICKET_SIZE 1024
-
-////////////////////////////////////////////////////////////////////////////////
-// Enums
-////////////////////////////////////////////////////////////////////////////////
-
-namespace ogalib {
-
-typedef enum {
-  DataSteamAuthSessionTicketStateNone = 0,
-  DataSteamAuthSessionTicketStateWaiting,
-  DataSteamAuthSessionTicketStateReady,
-  DataSteamAuthSessionTicketStateError,
-} DataSteamAuthSessionTicketState;
-
-};
+#include <np_cg.h>
 
 ////////////////////////////////////////////////////////////////////////////////
 // Classes
@@ -61,26 +40,20 @@ typedef enum {
 
 namespace ogalib {
 
-class DataSteam {
+class DataPS4 {
 public:
 
-  bool initializedSteam;
-  bool steamAPIInitEnabled;
+  SceUserServiceUserId initialUserId;
 
-  u64 appId;
-
-  u64 authSessionTicketAccountId;
-  u8 authSessionTicket[OGALIB_STEAM_AUTH_SESSION_TICKET_SIZE];
-  u32 authSessionTicketSize;
-  std::function<void(const json&)> authSessionTicketCallback;
-  HAuthTicket authSessionTicketHandle;
-  DataSteamAuthSessionTicketState authSessionTicketState;
-
-  STEAM_CALLBACK(DataSteam, OnGetAuthSessionTicketResponse, GetAuthSessionTicketResponse_t, cbGetAuthSessionTicketResponse);
+  int npStateCallbackId;
+  int netPoolId;
+  int sslContextId;
+  int httpContextId;
+  int http2ContextId;
 
 public:
 
-  DataSteam();
+  DataPS4();
 
 };
 
@@ -92,10 +65,9 @@ public:
 
 namespace ogalib {
 
-void InitSteam();
-void FinalizeSteam();
-void ProcessSteam();
-void LoginUsingSteam(std::function<void(const json&)> callback);
+void InitPS4();
+void ShutdownPS4();
+void LoginUsingPS4(std::function<void(const json&)> callback);
 
 };
 

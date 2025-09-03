@@ -885,22 +885,7 @@
     <ClCompile Include="src\ogalib\ogalib.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\ogalib\ps5\ps5_ogalib.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\ogalib\ps5\ps5_Thread.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\ogalib\steam\steam_ogalib.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\ogalib\Thread.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\ogalib\windows\windows_ogalib.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\ogalib\windows\windows_Thread.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\png\png.c">
@@ -1227,9 +1212,6 @@
     <ClCompile Include="src\jpeg\cdjpeg.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\jpeg\example.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\jpeg\jaricom.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -1408,6 +1390,27 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\jpeg\wrtarga.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ogalib\ps4\ogalib_ps4.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ogalib\ps4\Thread_ps4.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ogalib\ps5\ogalib_ps5.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ogalib\ps5\Thread_ps5.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ogalib\steam\ogalib_steam.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ogalib\windows\ogalib_windows.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ogalib\windows\Thread_windows.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -2645,12 +2648,6 @@
     <ClInclude Include="include\ogalib\md5\md5.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\ogalib\ps5\ps5_ogalib.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\ogalib\steam\steam_ogalib.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="include\ogalib\Config.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -3294,6 +3291,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\jpeg\jversion.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\ogalib\ps4\ogalib_ps4.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\ogalib\ps5\ogalib_ps5.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\ogalib\steam\ogalib_steam.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

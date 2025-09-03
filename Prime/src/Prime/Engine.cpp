@@ -148,6 +148,8 @@ void Engine::ProcessJobs() {
 }
 
 void Engine::WaitForNoJobs() {
-  ogalib::WaitForNoJobs();
-  Thread::Yield();
+  while(ogalib::Job::HasJobs()) {
+    ogalib::Process();
+    Thread::Yield();
+  }
 }

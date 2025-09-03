@@ -134,7 +134,7 @@ bool SkeletonContent::Load(const json& data, const json& info) {
                 parsedBone->parentIndex = value.GetInt();
               }
               else {
-                parsedBone->parentIndex = atoi(it.c_str());
+                parsedBone->parentIndex = atoi(it.cstr());
               }
             }
 

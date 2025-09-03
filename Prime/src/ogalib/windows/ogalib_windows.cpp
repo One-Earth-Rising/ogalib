@@ -36,12 +36,19 @@ SOFTWARE.
 #include <ogalib/ogalib.h>
 
 ////////////////////////////////////////////////////////////////////////////////
+// Defines
+////////////////////////////////////////////////////////////////////////////////
+
+#define OGALIB_WINHTTP_RESOLVE_TIMEOUT    (30 * 1000)
+#define OGALIB_WINHTTP_CONNECT_TIMEOUT    (30 * 1000)
+#define OGALIB_WINHTTP_SEND_TIMEOUT       (30 * 1000)
+#define OGALIB_WINHTTP_RECEIVE_TIMEOUT    (30 * 1000)
+
+////////////////////////////////////////////////////////////////////////////////
 // Variables
 ////////////////////////////////////////////////////////////////////////////////
 
 extern ogalib::Data ogalibData;
-
-std::unordered_map<std::string, ogalib::json> urlResponseDataCache;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Functions
@@ -55,17 +62,6 @@ bool ogalib::SendURL(const std::string& url, const json& params, json& result) {
 
   if(url.size() == 0)
     return false;
-
-  ogalibData.assetCacheMutex->Lock();
-
-  auto itCached = urlResponseDataCache.find(url);
-  if(itCached != urlResponseDataCache.end()) {
-    result = itCached->second;
-    ogalibData.assetCacheMutex->Unlock();
-    return true;
-  }
-
-  ogalibData.assetCacheMutex->Unlock();
 
   DWORD dwSize = 0;
   DWORD dwDownloaded = 0;
@@ -95,7 +91,8 @@ bool ogalib::SendURL(const std::string& url, const json& params, json& result) {
   if(auto it = result.find("error")) {
     result.erase(it);
   }
-  result["status"] = 0;
+
+  result["statusCode"] = 0;
   result["statusText"] = "";
 
   int32_t port;  
@@ -151,6 +148,9 @@ bool ogalib::SendURL(const std::string& url, const json& params, json& result) {
   hSession = WinHttpOpen(L"", WINHTTP_ACCESS_TYPE_DEFAULT_PROXY, WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0 );
 
   if(hSession) {
+    bool result = WinHttpSetTimeouts(hSession, OGALIB_WINHTTP_RESOLVE_TIMEOUT, OGALIB_WINHTTP_CONNECT_TIMEOUT, OGALIB_WINHTTP_SEND_TIMEOUT, OGALIB_WINHTTP_RECEIVE_TIMEOUT);
+    ogalibAssert(result, "Error in call to WinHttpSetTimeouts.");
+
     hConnect = WinHttpConnect(hSession, std::wstring(server.begin(), server.end()).c_str(), port, 0);
   }
 
@@ -251,7 +251,7 @@ bool ogalib::SendURL(const std::string& url, const json& params, json& result) {
         WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
         WINHTTP_HEADER_NAME_BY_INDEX,
         &dwStatusCode, &dwSize, WINHTTP_NO_HEADER_INDEX)) {
-        result["status"] = (uint32_t) dwStatusCode;
+        result["statusCode"] = (uint32_t) dwStatusCode;
         statusCode = dwStatusCode;
       }
 
@@ -270,24 +270,25 @@ bool ogalib::SendURL(const std::string& url, const json& params, json& result) {
         if(!WinHttpQueryDataAvailable(hRequest, &dwSize)) {
           result["error"] = string_printf("Error %u in WinHttpQueryDataAvailable.", GetLastError());
         }
-
-        pszOutBuffer = new char[dwSize + 1];
-        if(!pszOutBuffer) {
-          dwSize = 0;
-          result["error"] = string_printf("Out of memory in SendURL.");
-        }
-        else {
-          ZeroMemory(pszOutBuffer, dwSize + 1);
-
-          if(!WinHttpReadData(hRequest, (LPVOID) pszOutBuffer, dwSize, &dwDownloaded)) {
-            result["error"] = string_printf("Error %u in WinHttpReadData.", GetLastError());
-            break;
+        else if(dwSize > 0) {
+          pszOutBuffer = new char[dwSize + 1];
+          if(!pszOutBuffer) {
+            dwSize = 0;
+            result["error"] = string_printf("Out of memory in SendURL.");
           }
           else {
-            responseData.append(pszOutBuffer, dwDownloaded);
-          }
+            ZeroMemory(pszOutBuffer, dwSize + 1);
 
-          delete[] pszOutBuffer;
+            if(!WinHttpReadData(hRequest, (LPVOID) pszOutBuffer, dwSize, &dwDownloaded)) {
+              result["error"] = string_printf("Error %u in WinHttpReadData.", GetLastError());
+              break;
+            }
+            else {
+              responseData.append(pszOutBuffer, dwDownloaded);
+            }
+
+            delete[] pszOutBuffer;
+          }
         }
       }
       while(dwSize > 0);
@@ -313,17 +314,11 @@ bool ogalib::SendURL(const std::string& url, const json& params, json& result) {
     resultValue = false;
   }
   else if(statusCode == 200) {
-    result["data"] = responseData;
+    result["response"] = responseData;
   }
   else {
     result["error"] = string_printf("HTTP status code: %d", statusCode);
     resultValue = false;
-  }
-
-  if(resultValue) {
-    ogalibData.assetCacheMutex->Lock();
-    urlResponseDataCache[url] = result;
-    ogalibData.assetCacheMutex->Unlock();
   }
 
   return resultValue;

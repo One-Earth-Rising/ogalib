@@ -32,18 +32,11 @@ SOFTWARE.
 
 #include <ogalib/Types.h>
 
-#ifdef _CRTDBG_MAP_ALLOC
-#ifdef new
-#undef new
-#endif
-#endif
-
 ////////////////////////////////////////////////////////////////////////////////
 // Classes
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace ogalib {
-
 class json {
 public:
 
@@ -70,10 +63,8 @@ public:
     iterator(json& js): js(js), iter(NullIter), iterEnd(NullIter), valueIter(NullValueIter), valueIterEnd(NullValueIter) {}
     iterator(json& js, const rapidjson::Document::MemberIterator& nativeIter, const rapidjson::Document::MemberIterator& nativeIterEnd): js(js), iter(nativeIter), iterEnd(nativeIterEnd), valueIter(NullValueIter), valueIterEnd(NullValueIter) {}
     iterator(json& js, const rapidjson::Document::ValueIterator& nativeIter, const rapidjson::Document::ValueIterator& nativeIterEnd): js(js), iter(NullIter), iterEnd(NullIter), valueIter(nativeIter), valueIterEnd(nativeIterEnd) {}
-
-  private:
-
-    iterator(const iterator& other): js(other.js), iter(other.iter), iterEnd(other.iterEnd), valueIter(other.valueIter), valueIterEnd(other.valueIterEnd) {}
+    iterator(json& js, const rapidjson::Document::MemberIterator& nativeIter, const rapidjson::Document::MemberIterator& nativeIterEnd, const rapidjson::Document::ValueIterator& nativeValueIter, const rapidjson::Document::ValueIterator& nativeValueIterEnd): js(js), iter(nativeIter), iterEnd(nativeIterEnd), valueIter(nativeValueIter), valueIterEnd(nativeValueIterEnd) {}
+    iterator(const iterator& other) = delete;
 
   public:
 
@@ -100,16 +91,8 @@ public:
       }
     }
 
-    iterator& operator=(const iterator& other) {
-      ogalibAssert(&js == &other.js, "Cannot copy iterator from another structure.");
-      if(iter != NullIter) {
-        iter = other.iter;
-      }
-      else if(valueIter != NullValueIter) {
-        valueIter = other.valueIter;
-      }
-      return *this;
-    }
+    iterator& operator=(const iterator& other) = delete;
+    iterator& operator=(const const_iterator& other) = delete;
 
     iterator& operator++() {
       if(iter != NullIter) {
@@ -133,7 +116,7 @@ public:
 
     iterator& operator=(const std::string& v) {
       if(iter != NullIter)
-        value() = rapidjson::Value().SetString(v.c_str(), (rapidjson::SizeType) v.size(), js.doc.GetAllocator());
+        value() = rapidjson::Value(v.c_str(), (rapidjson::SizeType) v.size(), js.doc.GetAllocator());
       return *this;
     }
 
@@ -270,43 +253,33 @@ public:
     }
 
     iterator operator[](const char* v) {
-      if(js.iter) {
-        return {js.iter.js, js.iter.value().FindMember(v), js.iter.iterEnd};
+      if(auto it = find(v)) {
+        return {it.js, it.iter, it.iterEnd};
       }
       else {
-        if(auto it = find(v)) {
-          return it;
+        auto& val = value();
+        if(val.IsObject()) {
+          val.AddMember(rapidjson::Value(v, js.doc.GetAllocator()), rapidjson::Value(), js.doc.GetAllocator());
+          return find(v);
         }
         else {
-          auto& val = value();
-          if(val.IsObject()) {
-            val.AddMember(rapidjson::Value(v, js.doc.GetAllocator()), rapidjson::Value(), js.doc.GetAllocator());
-            return find(v);
-          }
-          else {
-            return json::iterator(*this);
-          }
+          return {js};
         }
       }
     }
 
     iterator operator[](const std::string& v) {
-      if(js.iter) {
-        return {js.iter.js, js.iter.value().FindMember(v), js.iter.iterEnd};
+      if(auto it = find(v)) {
+        return {it.js, it.iter, it.iterEnd};
       }
       else {
-        if(auto it = find(v)) {
-          return it;
+        auto& val = value();
+        if(val.IsObject()) {
+          val.AddMember(rapidjson::Value().SetString(v.c_str(), (rapidjson::SizeType) v.size(), js.doc.GetAllocator()), rapidjson::Value(), js.doc.GetAllocator());
+          return find(v);
         }
         else {
-          auto& val = value();
-          if(val.IsObject()) {
-            val.AddMember(rapidjson::Value().SetString(v.c_str(), (rapidjson::SizeType) v.size(), js.doc.GetAllocator()), rapidjson::Value(), js.doc.GetAllocator());
-            return find(v);
-          }
-          else {
-            return json::iterator(*this);
-          }
+          return {js};
         }
       }
     }
@@ -334,7 +307,7 @@ public:
       }
     }
 
-    const char* c_str() const {
+    const char* cstr() const {
       if(iter->value.IsString()) {
         return iter->value.GetString();
       }
@@ -450,6 +423,10 @@ public:
       return value().IsNumber();
     }
 
+    bool IsFloat() const {
+      return value().IsFloat();
+    }
+
     bool IsDouble() const {
       return value().IsDouble();
     }
@@ -463,7 +440,7 @@ public:
     }
 
     bool IsSizeT() const {
-      ogalibAssert(sizeof(size_t) <= sizeof(uint64_t), "Type size_t is too large to be supported by json values.");
+      ogalibAssert(sizeof(size_t) <= sizeof(uint64_t), "Type size_t is too large to be supported by json values: %d > %d", sizeof(size_t), sizeof(uint64_t));
       if(sizeof(size_t) > sizeof(uint64_t)) {
         return false;
       }
@@ -472,7 +449,7 @@ public:
     }
 
     bool IsVoidPtr() const {
-      ogalibAssert(sizeof(intptr_t) <= sizeof(int64_t), "Type intptr_t is too large to be supported by json values.");
+      ogalibAssert(sizeof(intptr_t) <= sizeof(int64_t), "Type intptr_t is too large to be supported by json values: %d > %d", sizeof(intptr_t), sizeof(int64_t));
       if(sizeof(intptr_t) > sizeof(int64_t)) {
         return false;
       }
@@ -548,7 +525,7 @@ public:
       auto& v = value();
       if(v.IsString()) {
         const char* result = v.GetString();
-        return std::string(result ? result : "", v.GetStringLength());
+        return result ? std::string(result, v.GetStringLength()) : "";
       }
 
       return std::string();
@@ -581,7 +558,7 @@ public:
     }
 
     size_t GetSizeT() const {
-      ogalibAssert(sizeof(size_t) <= sizeof(uint64_t), "Type size_t is too large to be supported by json values.");
+      ogalibAssert(sizeof(size_t) <= sizeof(uint64_t), "Type size_t is too large to be supported by json values: %d > %d", sizeof(size_t), sizeof(uint64_t));
       if(sizeof(size_t) > sizeof(uint64_t)) {
         return 0;
       }
@@ -595,7 +572,7 @@ public:
     }
 
     void* GetVoidPtr() const {
-      ogalibAssert(sizeof(intptr_t) <= sizeof(int64_t), "Type intptr_t is too large to be supported by json values.");
+      ogalibAssert(sizeof(intptr_t) <= sizeof(int64_t), "Type intptr_t is too large to be supported by json values: %d > %d", sizeof(intptr_t), sizeof(int64_t));
       if(sizeof(intptr_t) > sizeof(int64_t)) {
         return nullptr;
       }
@@ -612,13 +589,18 @@ public:
     T* GetPtr() const {
       return static_cast<T*>(GetVoidPtr());
     }
+	
+    iterator& null() {
+      value().SetNull();
+      return *this;
+    }
 
-    iterator& SetObject() {
+    iterator& object() {
       value().SetObject();
       return *this;
     }
 
-    iterator& SetArray() {
+    iterator& array() {
       value().SetArray();
       return *this;
     }
@@ -630,6 +612,22 @@ public:
       }
       else {
         return 0;
+      }
+    }
+
+    bool empty() const {
+      auto& v = value();
+      if(v.IsNull()) {
+        return false;
+      }
+      else if(v.IsObject()) {
+        return v.MemberCount() == 0;
+      }
+      else if(v.IsArray()) {
+        return v.Size() == 0;
+      }
+      else {
+        return false;
       }
     }
 
@@ -684,12 +682,8 @@ public:
     const_iterator(const json& js): js(js), iter(ConstNullIter), iterEnd(ConstNullIter), valueIter(ConstNullValueIter), valueIterEnd(ConstNullValueIter) {}
     const_iterator(const json& js, const rapidjson::Document::ConstMemberIterator& nativeIter, const rapidjson::Document::ConstMemberIterator& nativeIterEnd): js(js), iter(nativeIter), iterEnd(nativeIterEnd), valueIter(ConstNullValueIter), valueIterEnd(ConstNullValueIter) {}
     const_iterator(const json& js, const rapidjson::Document::ConstValueIterator& nativeIter, const rapidjson::Document::ConstValueIterator& nativeIterEnd): js(js), iter(ConstNullIter), iterEnd(ConstNullIter), valueIter(nativeIter), valueIterEnd(nativeIterEnd) {}
-
-  private:
-
-    const_iterator(const const_iterator& other): js(other.js), iter(other.iter), iterEnd(other.iterEnd), valueIter(other.valueIter), valueIterEnd(other.valueIterEnd) {}
-
-  public:
+    const_iterator(const json& js, const rapidjson::Document::ConstMemberIterator& nativeIter, const rapidjson::Document::ConstMemberIterator& nativeIterEnd, const rapidjson::Document::ConstValueIterator& nativeValueIter, const rapidjson::Document::ConstValueIterator& nativeValueIterEnd): js(js), iter(nativeIter), iterEnd(nativeIterEnd), valueIter(nativeValueIter), valueIterEnd(nativeValueIterEnd) {}
+    const_iterator(const const_iterator& other) = delete;
 
     operator bool() const {
       if(iter != ConstNullIter) {
@@ -702,16 +696,8 @@ public:
       return false;
     }
 
-    const_iterator& operator=(const const_iterator& other) {
-      ogalibAssert(&js == &other.js, "Cannot copy iterator from another structure.");
-      if(iter != NullIter) {
-        iter = other.iter;
-      }
-      else if(valueIter != NullValueIter) {
-        valueIter = other.valueIter;
-      }
-      return *this;
-    }
+    const_iterator& operator=(const iterator& other) = delete;
+    const_iterator& operator=(const const_iterator& other) = delete;
 
     const_iterator& operator++() {
       if(iter != NullIter) {
@@ -798,7 +784,7 @@ public:
       }
     }
 
-    const char* c_str() const {
+    const char* cstr() const {
       if(iter->value.IsString()) {
         return iter->value.GetString();
       }
@@ -914,6 +900,10 @@ public:
       return value().IsNumber();
     }
 
+    bool IsFloat() const {
+      return value().IsFloat();
+    }
+
     bool IsDouble() const {
       return value().IsDouble();
     }
@@ -927,7 +917,7 @@ public:
     }
 
     bool IsSizeT() const {
-      ogalibAssert(sizeof(size_t) <= sizeof(uint64_t), "Type size_t is too large to be supported by json values.");
+      ogalibAssert(sizeof(size_t) <= sizeof(uint64_t), "Type size_t is too large to be supported by json values: %d > %d", sizeof(size_t), sizeof(uint64_t));
       if(sizeof(size_t) > sizeof(uint64_t)) {
         return false;
       }
@@ -936,8 +926,8 @@ public:
     }
 
     bool IsVoidPtr() const {
-      ogalibAssert(sizeof(intptr_t) <= sizeof(uint64_t), "Type intptr_t is too large to be supported by json values.");
-      if(sizeof(intptr_t) > sizeof(uint64_t)) {
+      ogalibAssert(sizeof(intptr_t) <= sizeof(int64_t), "Type intptr_t is too large to be supported by json values: %d > %d", sizeof(intptr_t), sizeof(uint64_t));
+      if(sizeof(intptr_t) > sizeof(int64_t)) {
         return false;
       }
 
@@ -1012,7 +1002,7 @@ public:
       auto& v = value();
       if(v.IsString()) {
         const char* result = v.GetString();
-        return std::string(result ? result : "", v.GetStringLength());
+        return result ? std::string(result, v.GetStringLength()) : "";
       }
 
       return std::string();
@@ -1066,7 +1056,7 @@ public:
 
       auto& v = value();
       if(v.IsInt64()) {
-        return (void*) (intptr_t) v.GetInt64();
+        return (void*) (intptr_t) v.GetUint64();
       }
 
       return nullptr;
@@ -1080,10 +1070,26 @@ public:
     size_t size() const {
       auto& v = value();
       if(v.IsArray()) {
-        return v.GetArray().Size();
+        return v.Size();
       }
       else {
         return 0;
+      }
+    }
+
+    bool empty() const {
+      auto& v = value();
+      if(v.IsNull()) {
+        return false;
+      }
+      else if(v.IsObject()) {
+        return v.MemberCount() == 0;
+      }
+      else if(v.IsArray()) {
+        return v.Size() == 0;
+      }
+      else {
+        return false;
       }
     }
 
@@ -1093,8 +1099,6 @@ public:
 private:
 
   rapidjson::Document doc;
-  json::iterator iter;
-  json::const_iterator constIter;
   std::string err;
 
 public:
@@ -1105,6 +1109,7 @@ public:
 
   json();
   json(const json& v);
+  json(const rapidjson::Value& v);
   json(const std::initializer_list<jsonbuilder::builder::field_holder>& v);
   json(const json::iterator& it);
   json(const json::const_iterator& it);
@@ -1115,7 +1120,7 @@ public:
   json& operator=(bool v);
   json& operator=(int v);
   json& operator=(unsigned int v);
-  json& operator=(long long v);
+  json& operator=(int64_t v);
   json& operator=(size_t v);
   json& operator=(float v);
   json& operator=(double v);
@@ -1126,6 +1131,7 @@ public:
   json& operator=(const json::const_iterator& it);
 
   json& operator+=(const json& v);
+  json& operator+=(const std::initializer_list<jsonbuilder::builder::field_holder>& v);
 
   json operator+(const json& v) const;
 
@@ -1135,6 +1141,12 @@ public:
   const_iterator operator[](const char* v) const;
   const_iterator operator[](const std::string& v) const;
   const_iterator operator[](const json& v) const;
+
+  bool operator==(const json& v) const;
+
+  json& null();
+  json& array();
+  json& object();
 
   bool parse(const char* v);
   bool parse(const std::string& v);
@@ -1160,6 +1172,7 @@ public:
   json& clear();
 
   size_t size() const;
+  bool empty() const;
 
   iterator begin();
   iterator end();
@@ -1174,6 +1187,7 @@ public:
   bool IsInt64() const;
   bool IsUint64() const;
   bool IsNumber() const;
+  bool IsFloat() const;
   bool IsDouble() const;
   bool IsString() const;
   bool IsNull() const;
@@ -1188,11 +1202,6 @@ public:
   std::string GetString() const;
 
   std::string tostring() const;
-
-public:
-
-  static json array();
-  static json object();
 
 };
 

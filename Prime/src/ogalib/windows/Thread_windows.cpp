@@ -68,7 +68,7 @@ typedef struct {
 // Variables
 ////////////////////////////////////////////////////////////////////////////////
 
-long long Thread::mainThreadId = 0;
+int64_t Thread::mainThreadId = 0;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Functions
@@ -347,8 +347,12 @@ size_t Thread::GetDeviceThreadCount() {
   return count;
 }
 
+int64_t Thread::GetCurrentThreadId() {
+  return ::GetCurrentThreadId();
+}
+
 void Thread::InitGlobal() {
-  mainThreadId = ::GetCurrentThreadId();
+  mainThreadId = Thread::GetCurrentThreadId();
 }
 
 void Thread::ShutdownGlobal() {
@@ -502,7 +506,7 @@ void ThreadCondition::SetCurrentLock(ThreadConditionLock* currentLock) {
 
 void* ogalib::ThreadEntryFunction(void* param) {
   Thread* thread = (Thread*) param;
-  thread->threadId = ::GetCurrentThreadId();
+  thread->threadId = ogalib::Thread::GetCurrentThreadId();
   SetOGALibThreadName((DWORD) (-1), thread->name.c_str());
 
   if(thread->entry) {

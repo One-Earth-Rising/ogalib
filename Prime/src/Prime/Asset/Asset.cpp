@@ -131,7 +131,7 @@ void Asset::Load(size_t id) {
   IncLoading();
   SendURL(string_printf("%s/GetAssetInfo/v1/?id=%d", useAPIRoot.c_str(), id), [=](const json& response) {
     if(auto it = response.find("data")) {
-      if(info.parse(it.c_str())) {
+      if(info.parse(it.cstr())) {
         if(auto itParentURL = info.find("parentURL")) {
           std::string parentURI = itParentURL.GetString();
           if(!parentURI.empty()) {
@@ -142,7 +142,7 @@ void Asset::Load(size_t id) {
         IncLoading();
         SendURL(string_printf("%s/GetAssetDataManifest/v1/?id=%d", useAPIRoot.c_str(), id), [=](const json& response) {
           if(auto it = response.find("data")) {
-            if(dataManifest.parse(it.c_str())) {
+            if(dataManifest.parse(it.cstr())) {
               // Load the main asset.
               std::string loadURL;
               std::string loadFormat;

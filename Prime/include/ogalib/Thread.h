@@ -45,8 +45,6 @@ SOFTWARE.
 
 namespace ogalib {
 
-class json;
-
 class ThreadMutex {
 private:
 
@@ -55,7 +53,7 @@ private:
 
 public:
 
-  ThreadMutex(const char* name = nullptr, bool recursive = false);
+  ThreadMutex(const char* name = NULL, bool recursive = false);
   virtual ~ThreadMutex();
 
 public:
@@ -77,12 +75,12 @@ private:
   void* param;
   void* result;
   void* native;
-  long long threadId;
+  int64_t threadId;
   float priority;
   int preferredCore;
   bool started;
 
-  static long long mainThreadId;
+  static int64_t mainThreadId;
 
 public:
 
@@ -102,6 +100,7 @@ public:
   static void Yield();
   static void Sleep(double duration);
   static size_t GetDeviceThreadCount();
+  static int64_t GetCurrentThreadId();
 
 private:
 

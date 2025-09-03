@@ -34,7 +34,7 @@ SOFTWARE.
 #include <Shellapi.h>
 #include <winhttp.h>
 #include <ogalib/ogalib.h>
-#include <ogalib/ogalib_steam.h>
+#include <ogalib/steam/ogalib_steam.h>
 
 using namespace ogalib;
 
@@ -81,8 +81,8 @@ void ogalib::InitSteam() {
     ogalibDataSteam.initializedSteam = SteamAPI_Init();
   }
 
-  HSteamUser hSteamUser = GetHSteamUser();
-  HSteamPipe hSteamPipe = GetHSteamPipe();
+  HSteamUser hSteamUser = SteamAPI_GetHSteamUser();
+  HSteamPipe hSteamPipe = SteamAPI_GetHSteamPipe();
   ISteamClient* steamClient = SteamClient();
   if(steamClient) {
     ISteamUtils* steamUtils = steamClient->GetISteamUtils(hSteamPipe, STEAMUTILS_INTERFACE_VERSION);
@@ -91,7 +91,7 @@ void ogalib::InitSteam() {
   }
 }
 
-void ogalib::FinalizeSteam() {
+void ogalib::ShutdownSteam() {
   if(ogalibDataSteam.steamAPIInitEnabled) {
     if(ogalibDataSteam.initializedSteam) {
       SteamAPI_Shutdown();
@@ -123,33 +123,34 @@ void ogalib::ProcessSteam() {
       std::string url = string_printf("%s/Login/v1/%s", ogalibData.baseAPI.c_str(), params.c_str()).c_str();
 
       json sendURLParams;
-      sendURLParams["ignoreSSLErrors"] = true;
+      sendURLParams["usesAPIKey"] = true;
 
       SendURL(url.c_str(), sendURLParams, [=](const json& response) {
         ogalibData.loginInProgress = false;
         auto callback = ogalibDataSteam.authSessionTicketCallback;
         ogalibDataSteam.authSessionTicketCallback = nullptr;
 
+        dbgprintf("response: %s\n", response.tostring().c_str());
+
         if(auto it = response.find("error")) {
           if(callback) {
             callback({
-              {"error", it.c_str()},
-            });
+              {"error", it.cstr()},
+              });
           }
         }
         else if(auto it = response.find("response")) {
           json loginResponse;
-          if(loginResponse.parse(it.str())) {
+          if(loginResponse.parse(it.cstr())) {
             if(auto itError = loginResponse.find("error")) {
               if(callback) {
                 callback({
-                  {"error", itError.c_str()},
-                });
+                  {"error", itError.cstr()},
+                  });
               }
             }
             else if(auto itResp = loginResponse.find("resp")) {
-              auto resp = itResp.str();
-              if(resp == "ok") {
+              if(itResp.GetString() == "ok") {
                 if(auto itId = loginResponse.find("id")) {
                   auto& id = itId.value();
                   if(id.IsNumber()) {
@@ -188,7 +189,7 @@ void ogalib::ProcessSteam() {
                 if(callback) {
                   callback({
                     {"error", "Invalid user."},
-                  });
+                    });
                 }
               }
             }
@@ -196,7 +197,7 @@ void ogalib::ProcessSteam() {
               if(callback) {
                 callback({
                   {"error", "Unknown response."},
-                });
+                  });
               }
             }
           }
@@ -204,7 +205,7 @@ void ogalib::ProcessSteam() {
             if(callback) {
               callback({
                 {"error", loginResponse.error()},
-              });
+                });
             }
           }
         }
@@ -212,7 +213,7 @@ void ogalib::ProcessSteam() {
           if(callback) {
             callback({
               {"error", "Could not find response."},
-            });
+              });
           }
         }
       });
@@ -225,7 +226,7 @@ void ogalib::ProcessSteam() {
       if(callback) {
         callback({
           {"error", "Failure in obtaining Steam authorization ticket."},
-        });
+          });
       }
     }
   }
@@ -237,15 +238,15 @@ void ogalib::LoginUsingSteam(std::function<void(const json&)> callback) {
   ogalibDataSteam.authSessionTicketCallback = callback;
   ogalibDataSteam.authSessionTicketState = DataSteamAuthSessionTicketStateNone;
 
-  HSteamUser hSteamUser = GetHSteamUser();
-  HSteamPipe hSteamPipe = GetHSteamPipe();
+  HSteamUser hSteamUser = SteamAPI_GetHSteamUser();
+  HSteamPipe hSteamPipe = SteamAPI_GetHSteamPipe();
   ISteamClient* steamClient = SteamClient();
   if(steamClient) {
     ISteamUser* steamUser = steamClient->GetISteamUser(hSteamUser, hSteamPipe, STEAMUSER_INTERFACE_VERSION);
     ogalibDataSteam.authSessionTicketAccountId = steamUser->GetSteamID().ConvertToUint64();
 
     ogalibDataSteam.authSessionTicketState = DataSteamAuthSessionTicketStateWaiting;
-    ogalibDataSteam.authSessionTicketHandle = steamUser->GetAuthSessionTicket(ogalibDataSteam.authSessionTicket, sizeof(ogalibDataSteam.authSessionTicket), &ogalibDataSteam.authSessionTicketSize);
+    ogalibDataSteam.authSessionTicketHandle = steamUser->GetAuthSessionTicket(ogalibDataSteam.authSessionTicket, sizeof(ogalibDataSteam.authSessionTicket), &ogalibDataSteam.authSessionTicketSize, NULL);
     if(ogalibDataSteam.authSessionTicketHandle == k_HAuthTicketInvalid) {
       ogalibDataSteam.authSessionTicketState = DataSteamAuthSessionTicketStateNone;
       ogalibData.loginInProgress = false;
@@ -254,7 +255,7 @@ void ogalib::LoginUsingSteam(std::function<void(const json&)> callback) {
       if(callback) {
         callback({
           {"error", "Could not request Steam authorization ticket."},
-        });
+          });
       }
     }
   }
@@ -265,7 +266,7 @@ void ogalib::LoginUsingSteam(std::function<void(const json&)> callback) {
     if(callback) {
       callback({
         {"error", "Steam is not available."},
-      });
+        });
     }
   }
 }

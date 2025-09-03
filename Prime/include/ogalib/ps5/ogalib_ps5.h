@@ -26,39 +26,49 @@ SOFTWARE.
 
 #pragma once
 
+#if defined(__PROSPERO__)
+
 ////////////////////////////////////////////////////////////////////////////////
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <string>
-
-#define RAPIDJSON_HAS_STDSTRING 1
-#include <rapidjson/document.h>
-#include <rapidjson/stringbuffer.h>
-#include <rapidjson/prettywriter.h>
-#include <rapidjson/builder.h>
+#include <np.h>
 
 ////////////////////////////////////////////////////////////////////////////////
-// Defines
+// Classes
 ////////////////////////////////////////////////////////////////////////////////
-
-#ifdef _DEBUG
-#define ogalib_dbgprintf printf
-#define ogalibAssert(b, f, ...) {if(!(b)) {ogalib::AssertCore(__FILE__, __LINE__, f, ##__VA_ARGS__);}} ((void)0)
-#else
-#define ogalib_dbgprintf(f, ...) ((void)0)
-#define ogalibAssert(b, f, ...) ((void)0)
-#endif
 
 namespace ogalib {
 
-void AssertCore(const char* file, uint32_t line, const char* f, ...);
+class DataPS5 {
+public:
+
+  SceUserServiceUserId initialUserId;
+
+  int npStateCallbackId;
+  int netPoolId;
+  int sslContextId;
+  int httpContextId;
+  int http2ContextId;
+
+public:
+
+  DataPS5();
+
+};
 
 };
 
 ////////////////////////////////////////////////////////////////////////////////
-// Includes
+// Functions
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <ogalib/json.h>
-#include <ogalib/Config.h>
+namespace ogalib {
+
+void InitPS5();
+void ShutdownPS5();
+void LoginUsingPS5(std::function<void(const json&)> callback);
+
+};
+
+#endif
