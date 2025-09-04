@@ -26,33 +26,11 @@ SOFTWARE.
 
 #pragma once
 
-////////////////////////////////////////////////////////////////////////////////
-// Includes
-////////////////////////////////////////////////////////////////////////////////
+#include <string>
 
-#include <ogalib/rapidjson_include.h>
-
-////////////////////////////////////////////////////////////////////////////////
-// Defines
-////////////////////////////////////////////////////////////////////////////////
-
-#ifdef _DEBUG
-#define ogalib_dbgprintf printf
-#define ogalibAssert(b, f, ...) {if(!(b)) {ogalib::AssertCore(__FILE__, __LINE__, f, ##__VA_ARGS__);}} ((void)0)
-#else
-#define ogalib_dbgprintf(f, ...) ((void)0)
-#define ogalibAssert(b, f, ...) ((void)0)
-#endif
-
-namespace ogalib {
-
-void AssertCore(const char* file, uint32_t line, const char* f, ...);
-
-};
-
-////////////////////////////////////////////////////////////////////////////////
-// Includes
-////////////////////////////////////////////////////////////////////////////////
-
-#include <ogalib/json.h>
-#include <ogalib/Config.h>
+#define RAPIDJSON_HAS_STDSTRING 1
+#define RAPIDJSON_SCHEMA_USE_INTERNALREGEX 0
+#include <rapidjson/document.h>
+#include <rapidjson/stringbuffer.h>
+#include <rapidjson/prettywriter.h>
+#include <rapidjson/builder.h>

@@ -30,14 +30,7 @@ SOFTWARE.
 // Includes
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <string>
-
-#define RAPIDJSON_HAS_STDSTRING 1
-#define RAPIDJSON_SCHEMA_USE_INTERNALREGEX 0
-#include <rapidjson/document.h>
-#include <rapidjson/stringbuffer.h>
-#include <rapidjson/prettywriter.h>
-#include <rapidjson/builder.h>
+#include <ogalib/rapidjson_include.h>
 
 ////////////////////////////////////////////////////////////////////////////////
 // Defines
