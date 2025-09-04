@@ -82,7 +82,6 @@ public:
 public:
 
   static bool HasJobs();
-  static void WaitForNoJobs();
 
 private:
 

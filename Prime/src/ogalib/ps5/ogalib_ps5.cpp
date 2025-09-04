@@ -136,6 +136,8 @@ void ogalib::ShutdownPS5() {
 
   err = sceSysmoduleUnloadModule(SCE_SYSMODULE_NP_AUTH);
   ogalibAssert(err >= SCE_OK, "Error in call to sceSysmoduleUnloadModule(SCE_SYSMODULE_NP_AUTH): 0x%08X", err);
+
+  (void) err;
 }
 
 void ogalib::LoginUsingPS5(std::function<void(const json&)> callback) {
